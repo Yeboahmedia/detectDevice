@@ -9,25 +9,17 @@
 </head>
 <body>
 
-    <div class="device-container">
-        <div class="device-frame">
-            <div class="device-border"></div>
-            <div class="device-screen">
-                <div class="notch"></div>
-                <h1 class="device-title" id="device-name">Detecting device...</h1>
+    <div class="container">
+        <h1 class="device-title" id="device-name">Detecting device...</h1>
 
-                <div class="device-info">
-                    <p><span class="info-label">Screen Size:</span> <span class="info-value" id="screen-size">Checking...</span></p>
-                    <p><span class="info-label">GPU:</span> <span class="info-value" id="gpu-info">Checking...</span></p>
-                    <p><span class="info-label">ProMotion (120Hz):</span> <span class="info-value" id="promotion">Checking...</span></p>
-                    <p><span class="info-label">Dynamic Island:</span> <span class="info-value" id="dynamic-island">Checking...</span></p>
-                </div>
-
-                <div class="device-footer">
-                    <p class="footer-text">This data is ephemeral and does not persist.</p>
-                </div>
-            </div>
+        <div class="device-info">
+            <p><span class="info-label">Screen Size:</span> <span class="info-value" id="screen-size">Checking...</span></p>
+            <p><span class="info-label">GPU:</span> <span class="info-value" id="gpu-info">Checking...</span></p>
+            <p><span class="info-label">ProMotion (120Hz):</span> <span class="info-value" id="promotion">Checking...</span></p>
+            <p><span class="info-label">Dynamic Island:</span> <span class="info-value" id="dynamic-island">Checking...</span></p>
         </div>
+
+        <p class="footer-text">This data is ephemeral and does not persist.</p>
     </div>
 
     <script src="detector.js"></script>
