@@ -4,6 +4,34 @@ async function fetchDeviceData() {
     const yamlText = await response.text();
     return parseYAML(yamlText);
   }
+
+    // Fetch device specifications from YAML.
+    const deviceData = await fetchDeviceData();
+
+    // Build a list of candidate devices matching physical resolution (allowing for orientation).
+    let candidates = [];
+    Object.entries(deviceData).forEach(([device, specs]) => {
+        if (!specs.resolution) return;
+        const [specWidth, specHeight] = specs.resolution.split("x").map(Number);
+
+        if (
+            (physWidth === specWidth && physHeight === specHeight) ||
+            (physWidth === specHeight && physHeight === specWidth)
+        ) {
+            candidates.push({ device, specs });
+        }
+    });
+
+    // 🔹 Extra filter: Ensure GPU matches if multiple devices share resolution.
+    if (candidates.length > 1) {
+        candidates = candidates.filter(candidate => {
+            return candidate.specs.gpu && gpuRenderer.includes(candidate.specs.gpu);
+        });
+    }
+
+    // 🔹 Last resort: Pick the most probable candidate.
+    const selectedDevice = candidates.length === 1 ? candidates[0] : null;
+
   
   // A simple YAML parser tailored for our devices.yaml structure.
   function parseYAML(yamlText) {
