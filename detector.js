@@ -4,34 +4,6 @@ async function fetchDeviceData() {
     const yamlText = await response.text();
     return parseYAML(yamlText);
   }
-
-    // Fetch device specifications from YAML.
-    const deviceData = await fetchDeviceData();
-
-    // Build a list of candidate devices matching physical resolution (allowing for orientation).
-    let candidates = [];
-    Object.entries(deviceData).forEach(([device, specs]) => {
-        if (!specs.resolution) return;
-        const [specWidth, specHeight] = specs.resolution.split("x").map(Number);
-
-        if (
-            (physWidth === specWidth && physHeight === specHeight) ||
-            (physWidth === specHeight && physHeight === specWidth)
-        ) {
-            candidates.push({ device, specs });
-        }
-    });
-
-    // 🔹 Extra filter: Ensure GPU matches if multiple devices share resolution.
-    if (candidates.length > 1) {
-        candidates = candidates.filter(candidate => {
-            return candidate.specs.gpu && gpuRenderer.includes(candidate.specs.gpu);
-        });
-    }
-
-    // 🔹 Last resort: Pick the most probable candidate.
-    const selectedDevice = candidates.length === 1 ? candidates[0] : null;
-
   
   // A simple YAML parser tailored for our devices.yaml structure.
   function parseYAML(yamlText) {
@@ -59,7 +31,6 @@ async function fetchDeviceData() {
   function getGPUInfo() {
     const canvas = document.createElement("canvas");
     const gl = canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
-    console.log(gl);
     if (!gl) return "Unknown GPU";
     const debugInfo = gl.getExtension("WEBGL_debug_renderer_info");
     return debugInfo ? gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL) : "Apple GPU";
@@ -212,22 +183,19 @@ function submitForm(isCorrect) {
         return;
     }
 
+    // Hide all forms and show danke screen
+    document.getElementById("correct-form").style.display = "none";
+    document.getElementById("incorrect-form").style.display = "none";
+    document.getElementById("danke-screen").style.display = "block";
+
     const googleSheetsUrl = "https://script.google.com/macros/s/AKfycbzt7oG5UGnqN9fMSebtm4b1v8l2eZBLjbATV5u5fJLtRHyNNzkR2yddomm-AVPlyRmhYQ/exec";  // Replace with your actual Google Apps Script URL
-    
+
     fetch(googleSheetsUrl, {
         method: "POST",
         mode: 'no-cors',
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userName: name, isCorrect, correctDevice })
     });
-
-    // Hide all forms and show danke screen
-    document.getElementById("correct-form").style.display = "none";
-    document.getElementById("incorrect-form").style.display = "none";
-    document.getElementById("danke").style.display = "block";
-
-
-    
 }
 
 
