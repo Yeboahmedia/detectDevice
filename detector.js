@@ -159,11 +159,36 @@ function showForm(isCorrect) {
     document.getElementById("correct-form").style.display = isCorrect ? "block" : "none";
     document.getElementById("incorrect-form").style.display = isCorrect ? "none" : "block";
 }
-  
-  // Submit form data and send to Google Sheets
+
+
+// Send data to Google Sheets
+function sendToGoogleSheets(data, submitButton) {
+    const googleSheetsUrl = "https://script.google.com/macros/s/AKfycbzt7oG5UGnqN9fMSebtm4b1v8l2eZBLjbATV5u5fJLtRHyNNzkR2yddomm-AVPlyRmhYQ/exec";  // Replace with your actual Google Apps Script URL
+
+    fetch(googleSheetsUrl, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data)
+    })
+    .then(() => {
+        alert("Submission successful!");
+        submitButton.innerText = "Submitted!";
+    })
+    .catch(error => {
+        console.error("Error:", error);
+        alert("Submission failed. Please try again.");
+        submitButton.innerText = "Submit";
+        submitButton.disabled = false;
+    });
+}
+
+
+// Submit form data and send to Google Sheets
 function submitForm(isCorrect) {
     const name = isCorrect ? document.getElementById("name").value : document.getElementById("incorrect-name").value;
     const correctDevice = isCorrect ? "" : document.getElementById("correct-device").value;
+    const submitButton = isCorrect ? document.getElementById("submit-correct") : document.getElementById("submit-incorrect");
 
     if (!name.trim() || (!isCorrect && !correctDevice.trim())) {
         alert("Please fill in all fields!");
@@ -176,6 +201,7 @@ function submitForm(isCorrect) {
 
     // Collect data
     const data = {
+        timestamp: new Date().toISOString(),
         userName: name,
         isCorrect: isCorrect ? "Yes" : "No",
         correctDevice: correctDevice || "N/A",
@@ -186,29 +212,9 @@ function submitForm(isCorrect) {
         dynamicIsland: document.getElementById("dynamic-island").innerText,
     };
 
-    sendToGoogleSheets(data);
+    sendToGoogleSheets(data, submitButton);
 }
 
-// Send data to Google Sheets
-function sendToGoogleSheets(data) {
-    const googleSheetsUrl = "https://script.google.com/macros/s/AKfycbzt7oG5UGnqN9fMSebtm4b1v8l2eZBLjbATV5u5fJLtRHyNNzkR2yddomm-AVPlyRmhYQ/exec";  // Replace with your actual web app URL
-
-    fetch(googleSheetsUrl, {
-        method: "POST",
-        mode: "no-cors",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify(data)
-    })
-    .then(() => {
-        alert("Submission successful!");
-    })
-    .catch(error => {
-        console.error("Error:", error);
-        alert("Submission failed. Please try again.");
-    });
-}
 
   // Run detection on page load.
   detectAppleDevice();
