@@ -154,6 +154,52 @@ async function fetchDeviceData() {
     );
   }
   
+  // Submit form data and send to Google Sheets
+function submitForm(isCorrect) {
+    const name = isCorrect ? document.getElementById("name").value : document.getElementById("incorrect-name").value;
+    const correctDevice = isCorrect ? "" : document.getElementById("correct-device").value;
+
+    if (!name.trim() || (!isCorrect && !correctDevice.trim())) {
+        alert("Please fill in all fields!");
+        return;
+    }
+
+    // Collect data
+    const data = {
+        userName: name,
+        isCorrect: isCorrect ? "Yes" : "No",
+        correctDevice: correctDevice || "N/A",
+        detectedDevice: document.getElementById("device-name").innerText,
+        screenSize: document.getElementById("screen-size").innerText,
+        gpu: document.getElementById("gpu-info").innerText,
+        promotion: document.getElementById("promotion").innerText,
+        dynamicIsland: document.getElementById("dynamic-island").innerText,
+    };
+
+    sendToGoogleSheets(data);
+}
+
+// Send data to Google Sheets
+function sendToGoogleSheets(data) {
+    const googleSheetsUrl = "https://script.google.com/macros/s/AKfycbzt7oG5UGnqN9fMSebtm4b1v8l2eZBLjbATV5u5fJLtRHyNNzkR2yddomm-AVPlyRmhYQ/exec";  // Replace with your actual web app URL
+
+    fetch(googleSheetsUrl, {
+        method: "POST",
+        mode: "no-cors",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify(data)
+    })
+    .then(() => {
+        alert("Submission successful!");
+    })
+    .catch(error => {
+        console.error("Error:", error);
+        alert("Submission failed. Please try again.");
+    });
+}
+
   // Run detection on page load.
   detectAppleDevice();
   

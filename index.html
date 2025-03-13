@@ -19,6 +19,31 @@
             <p><span class="info-label">Dynamic Island:</span> <span class="info-value" id="dynamic-island">Checking...</span></p>
         </div>
 
+        <!-- Confirmation Form -->
+        <div class="confirmation-box">
+            <p>Are your device details correct?</p>
+            <button class="confirm-btn correct" onclick="showForm(true)">✔</button>
+            <button class="confirm-btn incorrect" onclick="showForm(false)">✖</button>
+        </div>
+
+        <!-- Correct Form -->
+        <div class="form-box" id="correct-form" style="display: none;">
+            <p>Thanks for testing..</p>
+            <label for="name">Your Name</label>
+            <input type="text" id="name" placeholder="Enter your name">
+            <button class="submit-btn" onclick="submitForm(true)">Submit</button>
+        </div>
+
+        <!-- Incorrect Form -->
+        <div class="form-box" id="incorrect-form" style="display: none;">
+            <p>Ah.. the code was wrong..</p>
+            <label for="incorrect-name">Your Name</label>
+            <input type="text" id="incorrect-name" placeholder="Enter your name">
+            <label for="correct-device">Correct Device Model</label>
+            <input type="text" id="correct-device" placeholder="Enter correct model">
+            <button class="submit-btn" onclick="submitForm(false)">Submit</button>
+        </div>
+
         <p class="footer-text">This data is ephemeral and does not persist.</p>
     </div>
 
