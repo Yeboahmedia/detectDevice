@@ -1,33 +1,33 @@
 // Fetch and parse the YAML file containing device specs
 async function fetchDeviceData() {
-    const response = await fetch("devices.yaml");
+    const response = await fetch("ios_devices.yaml");
     const yamlText = await response.text();
     return parseYAML(yamlText);
 }
 
-// A simple YAML parser tailored for our devices.yaml structure.
+// YAML Parser for structured device data
 function parseYAML(yamlText) {
     const lines = yamlText.split("\n").filter(line => line.trim() && !line.trim().startsWith("#"));
-    const devices = {};
+    let devices = {};
     let currentDevice = null;
 
     for (const line of lines) {
-        // Check for device header (ends with a colon, no indent)
-        if (/^[^ \t].*:\s*$/.test(line)) {
+        if (/^[^\s].*:$/.test(line)) {
             currentDevice = line.split(":")[0].trim();
             devices[currentDevice] = {};
         } else if (currentDevice) {
-            // Expect lines like "key: value" (may be indented)
-            const [key, ...rest] = line.trim().split(":");
-            if (key && rest.length) {
-                devices[currentDevice][key.trim()] = rest.join(":").trim();
-            }
+            const [key, ...valueParts] = line.trim().split(":");
+            let value = valueParts.join(":").trim();
+            if (!isNaN(value)) value = parseFloat(value);
+            if (value === "true" || value === "false") value = value === "true";
+            devices[currentDevice][key.trim()] = value;
         }
     }
     return devices;
 }
 
-// Get the WebGL GPU information if available.
+
+// Extract WebGL GPU information
 function getGPUInfo() {
     const canvas = document.createElement("canvas");
     const gl = canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
@@ -36,7 +36,7 @@ function getGPUInfo() {
     return debugInfo ? gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL) : "Apple GPU";
 }
 
-// Check for ProMotion (120Hz) support using a heuristic.
+// Detect ProMotion support via refresh rate
 function hasProMotion() {
     return window.matchMedia("(prefers-reduced-motion: no-preference)").matches;
 }
@@ -47,6 +47,13 @@ function hasDynamicIsland(deviceName) {
     return lowerName.includes("14 pro") || lowerName.includes("15 pro") || lowerName.includes("16 pro");
 }
 
+// Compute aspect ratio from screen dimensions
+function computeAspectRatio(width, height) {
+    const gcd = (a, b) => (b === 0 ? a : gcd(b, a % b));
+    const divisor = gcd(width, height);
+    return `${width / divisor}:${height / divisor}`;
+}
+
 // Update the UI elements on the page.
 function updateUI(deviceName, resolution, gpu, promotion, dynamicIsland, webglGPU) {
     document.getElementById("device-name").innerText = deviceName;
@@ -54,108 +61,57 @@ function updateUI(deviceName, resolution, gpu, promotion, dynamicIsland, webglGP
     document.getElementById("gpu-info").innerText = gpu;
     document.getElementById("promotion").innerText = promotion;
     document.getElementById("dynamic-island").innerText = dynamicIsland;
-    document.getElementById("webgl-gpu").innerText = webglGPU; // Show WebGL GPU result
 }
 
 
-// The main detection logic.
+// Match the best possible iOS device
 async function detectAppleDevice() {
     const dpr = window.devicePixelRatio || 1;
-    const physWidth = Math.round(window.screen.width * dpr);
-    const physHeight = Math.round(window.screen.height * dpr);
-    const gpuRenderer = getGPUInfo(); // Get WebGL GPU Renderer
+    const logicalWidth = window.screen.width;
+    const logicalHeight = window.screen.height;
+    const physicalWidth = Math.round(logicalWidth * dpr);
+    const physicalHeight = Math.round(logicalHeight * dpr);
+    const ppi = Math.round((physicalWidth / logicalWidth) * 163); // Rough estimate
+    const aspectRatio = computeAspectRatio(physicalWidth, physicalHeight);
+    const gpuRenderer = getGPUInfo();
+    const promotionSupport = hasProMotion();
 
-    console.log(`Detected resolution: ${physWidth} x ${physHeight}`);
-    console.log(`WebGL GPU Renderer: ${gpuRenderer}`);
-
-    // Fetch device specifications from YAML.
+    // Fetch device specs
     const deviceData = await fetchDeviceData();
 
-    // Step 1: Find devices that match resolution (allow portrait & landscape).
+    // Filter candidates by matching all available data points
     let candidates = [];
     Object.entries(deviceData).forEach(([device, specs]) => {
-        if (!specs.resolution) return;
-        const [specWidth, specHeight] = specs.resolution.split("x").map(Number);
-
         if (
-            (physWidth === specWidth && physHeight === specHeight) ||
-            (physWidth === specHeight && physHeight === specWidth)
+            Math.abs(physicalWidth - specs.physical_width) <= 10 &&
+            Math.abs(physicalHeight - specs.physical_height) <= 10 &&
+            Math.abs(ppi - specs.ppi) <= 10 &&
+            aspectRatio === specs.aspect_ratio &&
+            promotionSupport === specs["pro-motion"]
         ) {
-            candidates.push({ device, specs });
+            candidates.push(device);
         }
     });
 
-    console.log("Resolution-matched candidates:", candidates);
-
-    // Step 2: Ensure we're actually on an iPhone/iPad.
-    const ua = navigator.userAgent;
-    const isIOS = /iPhone|iPad/.test(ua);
-
-    if (!isIOS || candidates.length === 0) {
-        console.warn("Device is either not an iPhone or no resolution match was found.");
-        updateUI(
-            "Not an iPhone or iPad",
-            `${physWidth} x ${physHeight}`,
-            gpuRenderer,
-            "N/A",
-            "N/A",
-            "N/A"
-        );
-        return;
+    // Handle multiple matches
+    let detectedDevice = "Unknown Apple Device";
+    if (candidates.length === 1) {
+        detectedDevice = candidates[0];
+    } else if (candidates.length > 1) {
+        detectedDevice = candidates.join(" | ");
     }
 
-    // Step 3: If exactly one match, use it.
-    let selectedDevice = candidates.length === 1 ? candidates[0] : null;
-
-    // Step 4: If multiple candidates exist, refine using GPU.
-    if (candidates.length > 1) {
-        console.log("Multiple candidates found. Attempting to filter by GPU...");
-        const filtered = candidates.filter(candidate => {
-            return candidate.specs.gpu && gpuRenderer.includes(candidate.specs.gpu);
-        });
-
-        if (filtered.length > 0) {
-            selectedDevice = filtered[0]; // Exact GPU match
-        } else {
-            console.warn("No exact GPU match found. Falling back to closest resolution match.");
-            selectedDevice = candidates[0]; // Use first resolution match
-        }
-    }
-
-    // Step 5: Handle the case where no device is found.
-    if (!selectedDevice) {
-        console.error("No valid device was identified.");
-        updateUI(
-            "Unknown Apple Device",
-            `${physWidth} x ${physHeight}`,
-            gpuRenderer,
-            hasProMotion() ? "Yes (120Hz)" : "No",
-            "No",
-            gpuRenderer // Show actual WebGL result
-        );
-        return;
-    }
-
-    // Step 6: Use WebGL GPU if not masked, otherwise fallback to YAML
-    let finalGPU = gpuRenderer === "Apple GPU" ? selectedDevice.specs.gpu : gpuRenderer;
-
-    // Step 7: Determine ProMotion
-    const fromYaml = (selectedDevice.specs.promotion || "").toLowerCase() === "true";
-    const finalPromotion = fromYaml && hasProMotion() ? "Yes (120Hz)" : "No";
-
-    // Step 8: Determine Dynamic Island
-    const finalDynamicIsland = hasDynamicIsland(selectedDevice.device) ? "Yes" : "No";
-
-    // Step 9: Update UI
-    updateUI(
-        selectedDevice.device,
-        `${physWidth} x ${physHeight}`,
-        finalGPU,
-        finalPromotion,
-        finalDynamicIsland,
-        gpuRenderer // Add actual WebGL GPU result to UI
-    );
+    // Update UI with detection results
+    document.getElementById("device-name").innerText = detectedDevice;
+    document.getElementById("screen-size").innerText = `${logicalWidth} x ${logicalHeight}`;
+    document.getElementById("gpu-info").innerText = gpuRenderer;
+    document.getElementById("promotion").innerText = promotionSupport ? "Yes (120Hz)" : "No";
 }
+
+
+
+
+
 
 // Show appropriate form when user selects correct/incorrect
 function showForm(isCorrect) {
