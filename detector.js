@@ -31,6 +31,7 @@ async function fetchDeviceData() {
   function getGPUInfo() {
     const canvas = document.createElement("canvas");
     const gl = canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
+    console.log(gl);
     if (!gl) return "Unknown GPU";
     const debugInfo = gl.getExtension("WEBGL_debug_renderer_info");
     return debugInfo ? gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL) : "Apple GPU";
@@ -183,19 +184,22 @@ function submitForm(isCorrect) {
         return;
     }
 
-    // Hide all forms and show danke screen
-    document.getElementById("correct-form").style.display = "none";
-    document.getElementById("incorrect-form").style.display = "none";
-    document.getElementById("danke-screen").style.display = "block";
-
     const googleSheetsUrl = "https://script.google.com/macros/s/AKfycbzt7oG5UGnqN9fMSebtm4b1v8l2eZBLjbATV5u5fJLtRHyNNzkR2yddomm-AVPlyRmhYQ/exec";  // Replace with your actual Google Apps Script URL
-
+    
     fetch(googleSheetsUrl, {
         method: "POST",
         mode: 'no-cors',
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userName: name, isCorrect, correctDevice })
     });
+
+    // Hide all forms and show danke screen
+    document.getElementById("correct-form").style.display = "none";
+    document.getElementById("incorrect-form").style.display = "none";
+    document.getElementById("danke").style.display = "block";
+
+
+    
 }
 
 
