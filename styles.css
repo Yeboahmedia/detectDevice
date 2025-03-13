@@ -137,3 +137,49 @@ input {
     border-radius: 16px;
     border: 2px dashed #000;
 }
+
+
+/* SVG Buttons */
+.svg-btn {
+    display: inline-block;
+    cursor: pointer;
+    padding: 5px;
+    transition: transform 0.2s;
+}
+
+.svg-btn:active {
+    transform: scale(0.9);
+}
+
+/* Remove default button styles */
+button {
+    all: unset;
+}
+
+/* Confirmation Box */
+.confirmation-box {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 20px;
+    padding: 15px;
+    border: 2px dashed #000;
+    border-radius: 16px;
+}
+
+/* Go Back Button */
+.go-back {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 700;
+    margin-top: 10px;
+}
+
+.go-back svg {
+    width: 20px;
+    height: 20px;
+}
