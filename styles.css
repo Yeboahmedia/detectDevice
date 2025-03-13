@@ -73,15 +73,6 @@ body {
     cursor: pointer;
 }
 
-.correct {
-    background: #4CAF50;
-    color: white;
-}
-
-.incorrect {
-    background: #E74C3C;
-    color: white;
-}
 
 /* Form Box */
 .form-box {
@@ -139,18 +130,6 @@ input {
 }
 
 
-/* SVG Buttons */
-.svg-btn {
-    display: inline-block;
-    cursor: pointer;
-    padding: 5px;
-    transition: transform 0.2s;
-}
-
-.svg-btn:active {
-    transform: scale(0.9);
-}
-
 /* Remove default button styles */
 button {
     all: unset;
@@ -159,12 +138,13 @@ button {
 /* Confirmation Box */
 .confirmation-box {
     display: flex;
-    justify-content: center;
-    gap: 15px;
-    margin-top: 20px;
-    padding: 15px;
-    border: 2px dashed #000;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 16px;
+    border: 1px dashed #000;
     border-radius: 16px;
+    text-align: center;
 }
 
 /* Go Back Button */
@@ -182,4 +162,33 @@ button {
 .go-back svg {
     width: 20px;
     height: 20px;
+}
+
+/* Text above buttons */
+.confirmation-text {
+    font-size: 16px;
+    font-weight: 700;
+    color: #2D2B2A;
+    margin-bottom: 10px;
+}
+
+/* Grouping buttons horizontally */
+.button-group {
+    display: flex;
+    gap: 15px;
+}
+
+
+/* SVG Buttons */
+.svg-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    padding: 5px;
+    transition: transform 0.2s;
+}
+
+.svg-btn:active {
+    transform: scale(0.9);
 }

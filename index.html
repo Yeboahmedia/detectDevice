@@ -22,18 +22,20 @@
         <!-- Confirmation Box -->
         <div class="confirmation-box" id="confirmation-box">
             <p>Are your device details correct?</p>
-            <div class="svg-btn correct" onclick="showForm(true)">
+            <div class="button-group">
+            <button class="confirm-btn correct" onclick="showForm(true)">
                 <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <rect width="48" height="48" rx="16" fill="#2CC05C"/>
                     <path d="M20.3677 32C19.8545 32 19.3414 31.8068 18.9363 31.3928L14.588 26.9495C14.2113 26.56 14 26.0345 14 25.4868C14 24.9392 14.2113 24.4137 14.588 24.0241C15.3712 23.2238 16.6676 23.2238 17.4508 24.0241L20.3677 27.0047L30.5497 16.6003C31.333 15.7999 32.6293 15.7999 33.4126 16.6003C34.1958 17.4006 34.1958 18.7253 33.4126 19.5257L21.7991 31.3928C21.394 31.8068 20.8808 32 20.3677 32Z" fill="#0A462F"/>
                 </svg>
-            </div>
-            <div class="svg-btn incorrect" onclick="showForm(false)">
+            </button>
+            <button class="confirm-btn incorrect" onclick="showForm(false)">
                 <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <rect width="48" height="48" rx="16" fill="#E74C3C"/>
                     <path d="M14 14L34 34M34 14L14 34" stroke="white" stroke-width="4" stroke-linecap="round"/>
                 </svg>
-            </div>
+            </button>
+        </div>
         </div>
 
         <!-- Correct Form -->
@@ -41,7 +43,7 @@
             <p>Earn one taco for your time</p>
             <label for="name">Your Name</label>
             <input type="text" id="name" placeholder="Enter your name">
-            <div class="submit-btn" id="submit-correct" onclick="submitForm(true)">Earn Taco</div>
+            <button class="submit-btn" id="submit-correct" onclick="submitForm(true)">Earn Taco</button>
             <div class="go-back" onclick="goBack()">
                 <svg width="25" height="24" viewBox="0 0 25 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path opacity="0.4" d="M12.5 22C18.023 22 22.5 17.523 22.5 12C22.5 6.477 18.023 2 12.5 2C6.977 2 2.5 6.477 2.5 12C2.5 17.523 6.977 22 12.5 22Z" fill="#DBDBC4"/>
@@ -50,6 +52,14 @@
                 <span>Go back</span>
             </div>
         </div>
+
+        <!-- Danke (Thank You) Screen -->
+        <div class="danke-screen" id="danke-screen" style="display: none;">
+            <p>🌮 Danke!!! Tacos in your slack soon...</p>
+            <p class="footer-text">You are all done here</p>
+        </div>
+
+        <p class="footer-text">Oops we lied. This data will be viewed by some of your favorite people.</p>
     </div>
 
     <script src="detector.js"></script>
