@@ -26,12 +26,12 @@
             <button class="confirm-btn incorrect" onclick="showForm(false)">✖</button>
         </div>
 
-        <!-- Correct Form -->
+       <!-- Correct Form -->
         <div class="form-box" id="correct-form" style="display: none;">
             <p>Thanks for testing..</p>
             <label for="name">Your Name</label>
             <input type="text" id="name" placeholder="Enter your name">
-            <button class="submit-btn" onclick="submitForm(true)">Submit</button>
+            <button class="submit-btn" id="submit-correct" onclick="submitForm(true)">Submit</button>
         </div>
 
         <!-- Incorrect Form -->
@@ -41,7 +41,7 @@
             <input type="text" id="incorrect-name" placeholder="Enter your name">
             <label for="correct-device">Correct Device Model</label>
             <input type="text" id="correct-device" placeholder="Enter correct model">
-            <button class="submit-btn" onclick="submitForm(false)">Submit</button>
+            <button class="submit-btn" id="submit-incorrect" onclick="submitForm(false)">Submit</button>
         </div>
 
         <p class="footer-text">This data is ephemeral and does not persist.</p>
