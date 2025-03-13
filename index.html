@@ -43,20 +43,17 @@
             <p>Earn one taco for your time</p>
             <label for="name">Your Name</label>
             <input type="text" id="name" placeholder="Enter your name">
-            <button class="submit-btn" id="submit-correct" onclick="submitForm(true)">Earn Taco</button>
-            <div class="go-back" onclick="goBack()">
-                <svg width="25" height="24" viewBox="0 0 25 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path opacity="0.4" d="M12.5 22C18.023 22 22.5 17.523 22.5 12C22.5 6.477 18.023 2 12.5 2C6.977 2 2.5 6.477 2.5 12C2.5 17.523 6.977 22 12.5 22Z" fill="#DBDBC4"/>
-                    <path d="M16.0014 11.2497H10.8114L12.5314 9.52965C12.8214 9.23965 12.8214 8.75965 12.5314 8.46966C12.3903 8.33017 12.1998 8.25195 12.0014 8.25195C11.803 8.25195 11.6125 8.33017 11.4714 8.46966L8.47141 11.4697C8.18141 11.7597 8.18141 12.2397 8.47141 12.5297L11.4714 15.5297C11.6214 15.6797 11.8114 15.7497 12.0014 15.7497C12.1914 15.7497 12.3814 15.6797 12.5314 15.5297C12.8214 15.2397 12.8214 14.7597 12.5314 14.4697L10.8114 12.7497H16.0014C16.4114 12.7497 16.7514 12.4097 16.7514 11.9997C16.7514 11.5897 16.4114 11.2497 16.0014 11.2497Z" fill="#2D2B2A"/>
-                </svg>
-                <span>Go back</span>
-            </div>
+            <button class="submit-btn" onclick="submitForm(true)">Submit</button>
         </div>
 
-        <!-- Danke (Thank You) Screen -->
-        <div class="danke-screen" id="danke-screen" style="display: none;">
-            <p>🌮 Danke!!! Tacos in your slack soon...</p>
-            <p class="footer-text">You are all done here</p>
+        <!-- Incorrect Form -->
+        <div class="form-box" id="incorrect-form" style="display: none;">
+            <p>Ah.. the code was wrong..</p>
+            <label for="incorrect-name">Your Name</label>
+            <input type="text" id="incorrect-name" placeholder="Enter your name">
+            <label for="correct-device">Correct Device Model</label>
+            <input type="text" id="correct-device" placeholder="Enter correct model">
+            <button class="submit-btn" onclick="submitForm(false)">Submit</button>
         </div>
 
         <p class="footer-text">Oops we lied. This data will be viewed by some of your favorite people.</p>
