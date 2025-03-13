@@ -159,31 +159,6 @@ function showForm(isCorrect) {
     document.getElementById("correct-form").style.display = isCorrect ? "block" : "none";
     document.getElementById("incorrect-form").style.display = isCorrect ? "none" : "block";
 }
-
-
-// Send data to Google Sheets
-function sendToGoogleSheets(data, submitButton) {
-    const googleSheetsUrl = "https://script.google.com/macros/s/AKfycbzt7oG5UGnqN9fMSebtm4b1v8l2eZBLjbATV5u5fJLtRHyNNzkR2yddomm-AVPlyRmhYQ/exec";  // Replace with your actual Google Apps Script URL
-
-    fetch(googleSheetsUrl, {
-        method: "POST",
-        mode: "no-cors",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data)
-    })
-    .then(() => {
-        alert("Submission successful!");
-        submitButton.innerText = "Submitted!";
-    })
-    .catch(error => {
-        console.error("Error:", error);
-        alert("Submission failed. Please try again.");
-        submitButton.innerText = "Submit";
-        submitButton.disabled = false;
-    });
-}
-
-
 // Show appropriate form when user selects correct/incorrect
 function showForm(isCorrect) {
     document.getElementById("confirmation-box").classList.add("hide");
@@ -217,6 +192,7 @@ function submitForm(isCorrect) {
 
     fetch(googleSheetsUrl, {
         method: "POST",
+        mode: 'no-cors',
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userName: name, isCorrect, correctDevice })
     });
@@ -226,4 +202,6 @@ function submitForm(isCorrect) {
 
   // Run detection on page load.
   detectAppleDevice();
+  
+
   
