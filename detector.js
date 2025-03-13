@@ -170,6 +170,10 @@ function submitForm(isCorrect) {
         return;
     }
 
+    // Disable submit button and change text
+    submitButton.innerText = "Submitting...";
+    submitButton.disabled = true;
+
     // Collect data
     const data = {
         userName: name,
