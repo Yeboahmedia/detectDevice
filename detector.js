@@ -153,6 +153,12 @@ async function fetchDeviceData() {
       finalDynamicIsland
     );
   }
+
+// Show appropriate form when user selects correct/incorrect
+function showForm(isCorrect) {
+    document.getElementById("correct-form").style.display = isCorrect ? "block" : "none";
+    document.getElementById("incorrect-form").style.display = isCorrect ? "none" : "block";
+}
   
   // Submit form data and send to Google Sheets
 function submitForm(isCorrect) {
