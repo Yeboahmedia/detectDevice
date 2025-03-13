@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Apple Device Detector</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 20px;
+        }
+        h1 {
+            color: #007aff;
+        }
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        li {
+            font-size: 18px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+
+    <h1 id="device-name">Detecting device...</h1>
+    <ul>
+        <li><strong>Screen Size:</strong> <span id="screen-size">Checking...</span></li>
+        <li><strong>GPU:</strong> <span id="gpu-info">Checking...</span></li>
+        <li><strong>ProMotion (120Hz):</strong> <span id="promotion">Checking...</span></li>
+    </ul>
+
+    <script>
+        async function detectAppleDevice() {
+            const ua = navigator.userAgent;
+            const isIOS = /iPhone|iPad/.test(ua) && /Safari/.test(ua);
+            if (!isIOS) return "Not an iPhone or iPad";
+
+            // Step 1: Detect screen size
+            const screenWidth = window.screen.width;
+            const screenHeight = window.screen.height;
+
+            const deviceGroups = {
+                "iPhone SE (1st/2nd/3rd Gen)": [{ width: 320, height: 568 }, { width: 375, height: 667 }],
+                "iPhone 6/7/8/XR/11": [{ width: 375, height: 812 }, { width: 414, height: 896 }],
+                "iPhone 12/13/14": [{ width: 390, height: 844 }],
+                "iPhone 12 Pro Max / 13 Pro Max / 14 Plus": [{ width: 430, height: 932 }],
+                "iPhone 14 Pro": [{ width: 393, height: 852 }],
+                "iPhone 14 Pro Max": [{ width: 430, height: 932 }],
+                "iPhone 15 / 15 Plus": [{ width: 390, height: 844 }, { width: 430, height: 932 }],
+                "iPhone 15 Pro / 15 Pro Max": [{ width: 393, height: 852 }, { width: 430, height: 932 }],
+                "iPhone 16 / 16 Plus": [{ width: 390, height: 844 }, { width: 430, height: 932 }],
+                "iPhone 16 Pro": [{ width: 393, height: 852 }],
+                "iPhone 16 Pro Max": [{ width: 430, height: 932 }],
+                "iPhone 16e": [{ width: 390, height: 844 }],
+                "iPad Mini/Air/Pro 11-inch": [{ width: 768, height: 1024 }, { width: 820, height: 1180 }],
+                "iPad Pro 12.9-inch": [{ width: 1024, height: 1366 }],
+            };
+
+            let detectedGroup = "Unknown Apple Device";
+            Object.entries(deviceGroups).forEach(([model, sizes]) => {
+                if (sizes.some(size => 
+                    (screenWidth === size.width && screenHeight === size.height) ||
+                    (screenWidth === size.height && screenHeight === size.width))) {
+                    detectedGroup = model;
+                }
+            });
+
+            // Step 2: Detect GPU
+            function getGPUInfo() {
+                const canvas = document.createElement('canvas');
+                const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+                if (!gl) return "Unknown GPU";
+                const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+                return debugInfo ? gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL) : "Unknown GPU";
+            }
+
+            const gpuRenderer = getGPUInfo();
+            const gpuToModel = {
+                "Apple A12 GPU": "iPhone XR/XS, iPad (2018-2019)",
+                "Apple A13 GPU": "iPhone 11 Series",
+                "Apple A14 GPU": "iPhone 12 Series",
+                "Apple A15 GPU": "iPhone 13 / iPhone 14",
+                "Apple A16 GPU": "iPhone 15 / iPhone 15 Plus",
+                "Apple A16 Pro GPU": "iPhone 15 Pro / iPhone 15 Pro Max",
+                "Apple A17 GPU": "iPhone 15s / iPhone 15s Plus",
+                "Apple A17 Pro GPU": "iPhone 15s Pro / iPhone 15s Pro Max",
+                "Apple A18 GPU": "iPhone 16 / iPhone 16 Plus / iPhone 16e",
+                "Apple A18 Pro GPU": "iPhone 16 Pro / iPhone 16 Pro Max",
+                "Apple M1 GPU": "iPad Pro M1",
+                "Apple M2 GPU": "iPad Pro M2"
+            };
+
+            let detectedModel = gpuToModel[gpuRenderer] || detectedGroup;
+
+            // Step 3: Check for ProMotion (120Hz)
+            function hasProMotion() {
+                return window.matchMedia("(prefers-reduced-motion: no-preference)").matches;
+            }
+
+            let promotionStatus = hasProMotion() ? "Yes (120Hz)" : "No";
+
+            // Update UI
+            document.getElementById("device-name").innerText = detectedModel;
+            document.getElementById("screen-size").innerText = `${screenWidth} x ${screenHeight}`;
+            document.getElementById("gpu-info").innerText = gpuRenderer;
+            document.getElementById("promotion").innerText = promotionStatus;
+        }
+
+        detectAppleDevice();
+    </script>
+
+</body>
+</html>
