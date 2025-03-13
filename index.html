@@ -4,33 +4,32 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Apple Device Detector</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            padding: 20px;
-        }
-        h1 {
-            color: #007aff;
-            font-size: 28px;
-        }
-        p {
-            font-size: 20px;
-        }
-        strong {
-            font-size: 22px;
-        }
-    </style>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@200;400;700&display=swap" rel="stylesheet">
 </head>
 <body>
 
-    <h1 id="device-name">Detecting device...</h1>
-    <p><strong>Screen Size:</strong> <span id="screen-size">Checking...</span></p>
-    <p><strong>GPU:</strong> <span id="gpu-info">Checking...</span></p>
-    <p><strong>Dynamic Island:</strong> <span id="dynamic-island">Checking...</span></p>
-    <p><strong>ProMotion (120Hz):</strong> <span id="promotion">Checking...</span></p>
+    <div class="device-container">
+        <div class="device-frame">
+            <div class="device-border"></div>
+            <div class="device-screen">
+                <div class="notch"></div>
+                <h1 class="device-title" id="device-name">Detecting device...</h1>
+
+                <div class="device-info">
+                    <p><span class="info-label">Screen Size:</span> <span class="info-value" id="screen-size">Checking...</span></p>
+                    <p><span class="info-label">GPU:</span> <span class="info-value" id="gpu-info">Checking...</span></p>
+                    <p><span class="info-label">ProMotion (120Hz):</span> <span class="info-value" id="promotion">Checking...</span></p>
+                    <p><span class="info-label">Dynamic Island:</span> <span class="info-value" id="dynamic-island">Checking...</span></p>
+                </div>
+
+                <div class="device-footer">
+                    <p class="footer-text">This data is ephemeral and does not persist.</p>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <script src="detector.js"></script>
-
 </body>
 </html>
