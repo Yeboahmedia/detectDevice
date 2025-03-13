@@ -1,0 +1,97 @@
+/* Global styles */
+body {
+    font-family: 'DM Sans', sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background: #F9F0E7;
+    margin: 0;
+}
+
+/* Device frame */
+.device-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.device-frame {
+    width: 320px;
+    height: 700px;
+    background: #FFF;
+    border-radius: 48px;
+    border: 2px solid #000;
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.device-screen {
+    width: 290px;
+    height: 680px;
+    background: #F9F0E7;
+    border-radius: 32px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-top: 20px;
+}
+
+/* Notch */
+.notch {
+    width: 90px;
+    height: 20px;
+    background: #000;
+    border-radius: 10px;
+    position: absolute;
+    top: 15px;
+}
+
+/* Device title */
+.device-title {
+    font-size: 24px;
+    font-weight: 700;
+    text-align: center;
+    color: #2D2B2A;
+    margin-top: 90px;
+}
+
+/* Device info container */
+.device-info {
+    width: 85%;
+    margin-top: 20px;
+}
+
+.device-info p {
+    font-size: 16px;
+    line-height: 24px;
+    margin: 8px 0;
+    text-align: left;
+}
+
+/* Labels and values */
+.info-label {
+    font-weight: 700;
+    color: #2D2B2A;
+}
+
+.info-value {
+    font-weight: 400;
+    color: #2D2B2A;
+}
+
+/* Footer text */
+.device-footer {
+    position: absolute;
+    bottom: 15px;
+    width: 100%;
+    text-align: center;
+}
+
+.footer-text {
+    font-size: 12px;
+    font-style: italic;
+    color: #5E646E;
+}
