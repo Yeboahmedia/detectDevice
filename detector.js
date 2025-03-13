@@ -1,79 +1,125 @@
+// Fetch and parse the YAML file containing device specs
 async function fetchDeviceData() {
     const response = await fetch("devices.yaml");
     const yamlText = await response.text();
     return parseYAML(yamlText);
-}
-
-// YAML parser to extract device data
-function parseYAML(yamlText) {
-    const lines = yamlText.split("\n").filter(line => line.trim() && !line.startsWith("#"));
-    const deviceData = {};
-    
-    let currentDevice = "";
-    lines.forEach(line => {
-        if (line.includes(":") && !line.includes("screen_size") && !line.includes("resolution") && !line.includes("gpu") && !line.includes("promotion")) {
-            currentDevice = line.split(":")[0].trim();
-            deviceData[currentDevice] = {};
-        } else if (currentDevice) {
-            const [key, value] = line.trim().split(":").map(item => item.trim());
-            deviceData[currentDevice][key] = value;
+  }
+  
+  // A simple YAML parser tailored for our devices.yaml structure.
+  function parseYAML(yamlText) {
+    const lines = yamlText.split("\n").filter(line => line.trim() && !line.trim().startsWith("#"));
+    const devices = {};
+    let currentDevice = null;
+    for (const line of lines) {
+      // Check for device header (ends with a colon, no indent)
+      if (/^[^ \t].*:\s*$/.test(line)) {
+        currentDevice = line.split(":")[0].trim();
+        devices[currentDevice] = {};
+      } else if (currentDevice) {
+        // Expect lines like "key: value" (may be indented)
+        const [key, ...rest] = line.trim().split(":");
+        if (key && rest.length) {
+          devices[currentDevice][key.trim()] = rest.join(":").trim();
         }
-    });
-
-    return deviceData;
-}
-
-// Function to detect Apple devices
-async function detectAppleDevice() {
+      }
+    }
+    return devices;
+  }
+  
+  // Get the WebGL GPU information if available.
+  function getGPUInfo() {
+    const canvas = document.createElement("canvas");
+    const gl = canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
+    if (!gl) return "Unknown GPU";
+    const debugInfo = gl.getExtension("WEBGL_debug_renderer_info");
+    return debugInfo ? gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL) : "Apple GPU";
+  }
+  
+  // Check for ProMotion (120Hz) support using a heuristic.
+  function hasProMotion() {
+    // Note: This is not a definitive test for ProMotion, but can serve as a hint.
+    return window.matchMedia("(prefers-reduced-motion: no-preference)").matches;
+  }
+  
+  // The main detection logic.
+  async function detectAppleDevice() {
+    // Check if the user agent indicates an Apple mobile device.
     const ua = navigator.userAgent;
     const isIOS = /iPhone|iPad/.test(ua);
-    if (!isIOS) return "Not an iPhone or iPad";
-
-    const screenWidth = window.screen.width;
-    const screenHeight = window.screen.height;
+    if (!isIOS) {
+      updateUI("Not an iPhone or iPad", "N/A", "N/A", "N/A");
+      return;
+    }
+    
+    // Compute the physical resolution
+    const dpr = window.devicePixelRatio || 1;
+    const physWidth = window.screen.width * dpr;
+    const physHeight = window.screen.height * dpr;
+    
+    // Fetch device specifications from YAML.
     const deviceData = await fetchDeviceData();
-
-    let detectedDevice = "Unknown Apple Device";
-    let detectedGPU = "Unknown GPU";
-    let detectedProMotion = "Unknown";
-
-    // Matching the device based on screen resolution
+    
+    // Build a list of candidate devices matching physical resolution (allowing for orientation).
+    let candidates = [];
     Object.entries(deviceData).forEach(([device, specs]) => {
-        const [resWidth, resHeight] = specs.resolution.split("x").map(n => parseInt(n, 10));
-        if (
-            (screenWidth === resWidth && screenHeight === resHeight) ||
-            (screenWidth === resHeight && screenHeight === resWidth) // Landscape check
-        ) {
-            detectedDevice = device;
-            detectedGPU = specs.gpu;
-            detectedProMotion = specs.promotion === "true" ? "Yes (120Hz)" : "No";
-        }
+      if (!specs.resolution) return;
+      const [specWidth, specHeight] = specs.resolution.split("x").map(Number);
+      // Check if resolution matches in either orientation.
+      if (
+        (physWidth === specWidth && physHeight === specHeight) ||
+        (physWidth === specHeight && physHeight === specWidth)
+      ) {
+        candidates.push({ device, specs });
+      }
     });
-
-    // WebGL GPU detection
-    function getGPUInfo() {
-        const canvas = document.createElement("canvas");
-        const gl = canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
-        if (!gl) return "Unknown GPU";
-        const debugInfo = gl.getExtension("WEBGL_debug_renderer_info");
-        return debugInfo ? gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL) : "Apple GPU";
-    }
-
+    
+    // If multiple candidates match (or none), we try to narrow using GPU info.
+    let selectedDevice = candidates.length === 1 ? candidates[0] : null;
     const gpuRenderer = getGPUInfo();
-
-    // If Apple hides GPU details, use YAML-based detection
-    if (gpuRenderer === "Apple GPU" && detectedDevice !== "Unknown Apple Device") {
-        detectedGPU = deviceData[detectedDevice]?.gpu || "Apple GPU (Limited Info)";
-    } else {
-        detectedGPU = gpuRenderer;
+    
+    if (candidates.length > 1) {
+      // Narrow down candidates that have a GPU spec substring that matches GPU info from WebGL.
+      const filtered = candidates.filter(candidate => {
+        const candidateGPU = candidate.specs.gpu || "";
+        return gpuRenderer.indexOf(candidateGPU.split(" ")[0]) !== -1;
+      });
+      if (filtered.length > 0) {
+        selectedDevice = filtered[0];
+      } else {
+        // Fallback: choose the first candidate.
+        selectedDevice = candidates[0];
+      }
     }
-
-    // Update UI
-    document.getElementById("device-name").innerText = detectedDevice;
-    document.getElementById("screen-size").innerText = `${screenWidth} x ${screenHeight}`;
-    document.getElementById("gpu-info").innerText = detectedGPU;
-    document.getElementById("promotion").innerText = detectedProMotion;
-}
-
-// Run detection on page load
-detectAppleDevice();
+    
+    // If no candidates match based on resolution, fallback to "Unknown"
+    if (!selectedDevice) {
+      updateUI("Unknown Apple Device", `${physWidth} x ${physHeight}`, gpuRenderer, hasProMotion() ? "Yes (120Hz)" : "No");
+      return;
+    }
+    
+    // Determine the GPU info: if WebGL returned "Apple GPU", use YAML data as fallback.
+    let detectedGPU = gpuRenderer === "Apple GPU" ? selectedDevice.specs.gpu : gpuRenderer;
+    
+    // Confirm ProMotion based on YAML flag and our matchMedia heuristic.
+    const candidatePromotion = (selectedDevice.specs.promotion || "").toLowerCase() === "true";
+    const promotionStatus = candidatePromotion && hasProMotion() ? "Yes (120Hz)" : "No";
+    
+    updateUI(
+      selectedDevice.device,
+      `${physWidth} x ${physHeight}`,
+      detectedGPU,
+      promotionStatus
+    );
+  }
+  
+  // Update the UI elements on the page.
+  function updateUI(deviceName, resolution, gpu, promotion) {
+    document.getElementById("device-name").innerText = deviceName;
+    document.getElementById("screen-size").innerText = resolution;
+    document.getElementById("gpu-info").innerText = gpu;
+    document.getElementById("promotion").innerText = promotion;
+  }
+  
+  // Run detection on page load.
+  detectAppleDevice();
+  
