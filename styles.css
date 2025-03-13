@@ -4,7 +4,7 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    min-height: 100vh;
+    min-height: 80vh;
     background: #F9F0E7;
     margin: 0;
 }
@@ -12,7 +12,6 @@ body {
 /* Main Container */
 .container {
     width: 300px;
-    background: #FFF;
     border-radius: 32px;
     padding: 20px;
     text-align: center;
@@ -41,7 +40,7 @@ body {
 
 /* Labels and Values */
 .info-label {
-    font-weight: 700;
+    font-weight: 600;
     color: #2D2B2A;
 }
 
@@ -59,8 +58,8 @@ body {
 }
 
 .confirmation-box p {
-    font-size: 14px;
-    font-weight: 400;
+    font-size: 16px;
+    font-weight: 600;
     margin-bottom: 10px;
 }
 
@@ -89,7 +88,7 @@ body {
 
 label {
     display: block;
-    font-weight: 700;
+    font-weight: 500;
     text-align: left;
     margin: 10px 0 5px;
 }
@@ -131,7 +130,7 @@ input {
 
 
 /* Remove default button styles */
-button {
+.button-group > button {
     all: unset;
 }
 
@@ -166,7 +165,7 @@ button {
 /* Text above buttons */
 .confirmation-text {
     font-size: 16px;
-    font-weight: 700;
+    font-weight: 500;
     color: #2D2B2A;
     margin-bottom: 10px;
 }
@@ -174,7 +173,7 @@ button {
 /* Grouping buttons horizontally */
 .button-group {
     display: flex;
-    gap: 15px;
+    gap: 32px;
 }
 
 
@@ -190,4 +189,17 @@ button {
 
 .svg-btn:active {
     transform: scale(0.9);
+}
+
+.footer-text {
+    color: var(--neutral-darkgrey, #5e646e);
+    text-align: center;
+    font-family: 'DmSans-ExtraLightItalic', sans-serif;
+    font-size: 12px;
+    line-height: 16px;
+    font-weight: 200;
+    font-style: italic;
+    position: relative;
+    flex: 1;
+    margin-top:10px;
 }
