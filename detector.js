@@ -1,9 +1,99 @@
 // Fetch and parse the YAML file containing device specs
-async function fetchDeviceData() {
-    const response = await fetch("devices.yaml");
-    const yamlText = await response.text();
-    return parseYAML(yamlText);
-  }
+async function detectAppleDevice() {
+    const dpr = window.devicePixelRatio || 1;
+    const physWidth = Math.round(window.screen.width * dpr);
+    const physHeight = Math.round(window.screen.height * dpr);
+    const gpuRenderer = getGPUInfo();
+
+    console.log(`Detected resolution: ${physWidth} x ${physHeight}`);
+    console.log(`Detected GPU: ${gpuRenderer}`);
+
+    // Fetch device specifications from YAML.
+    const deviceData = await fetchDeviceData();
+
+    // Find devices that match the detected resolution (either portrait or landscape).
+    let candidates = [];
+    Object.entries(deviceData).forEach(([device, specs]) => {
+        if (!specs.resolution) return;
+        const [specWidth, specHeight] = specs.resolution.split("x").map(Number);
+
+        // Allow both portrait and landscape orientations
+        if (
+            (physWidth === specWidth && physHeight === specHeight) ||
+            (physWidth === specHeight && physHeight === specWidth)
+        ) {
+            candidates.push({ device, specs });
+        }
+    });
+
+    console.log("Resolution-matched candidates:", candidates);
+
+    // If no candidates found, check userAgent for iOS
+    const ua = navigator.userAgent;
+    const isIOS = /iPhone|iPad/.test(ua);
+
+    if (!isIOS || candidates.length === 0) {
+        console.warn("Device is either not an iPhone or no resolution match was found.");
+        updateUI(
+            "Not an iPhone or iPad",
+            `${physWidth} x ${physHeight}`,
+            gpuRenderer,
+            "N/A",
+            "N/A"
+        );
+        return;
+    }
+
+    // If there's only one candidate, use it.
+    let selectedDevice = candidates.length === 1 ? candidates[0] : null;
+
+    // If multiple candidates exist, filter based on GPU.
+    if (candidates.length > 1) {
+        console.log("Multiple candidates found. Attempting to filter by GPU...");
+        const filtered = candidates.filter(candidate => {
+            return candidate.specs.gpu && gpuRenderer.includes(candidate.specs.gpu);
+        });
+
+        if (filtered.length > 0) {
+            selectedDevice = filtered[0];
+        } else {
+            console.warn("No exact GPU match found. Falling back to first resolution match.");
+            selectedDevice = candidates[0];
+        }
+    }
+
+    if (!selectedDevice) {
+        console.error("No valid device was identified.");
+        updateUI(
+            "Unknown Apple Device",
+            `${physWidth} x ${physHeight}`,
+            gpuRenderer,
+            hasProMotion() ? "Yes (120Hz)" : "No",
+            "No"
+        );
+        return;
+    }
+
+    // Use WebGL GPU if not masked, otherwise fallback to YAML
+    let finalGPU = gpuRenderer === "Apple GPU" ? selectedDevice.specs.gpu : gpuRenderer;
+
+    // Determine ProMotion from YAML + heuristic
+    const fromYaml = (selectedDevice.specs.promotion || "").toLowerCase() === "true";
+    const finalPromotion = fromYaml && hasProMotion() ? "Yes (120Hz)" : "No";
+
+    // Determine Dynamic Island
+    const finalDynamicIsland = hasDynamicIsland(selectedDevice.device) ? "Yes" : "No";
+
+    // Update UI
+    updateUI(
+        selectedDevice.device,
+        `${physWidth} x ${physHeight}`,
+        finalGPU,
+        finalPromotion,
+        finalDynamicIsland
+    );
+}
+
   
   // A simple YAML parser tailored for our devices.yaml structure.
   function parseYAML(yamlText) {
