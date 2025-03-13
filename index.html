@@ -19,8 +19,8 @@
             <p><span class="info-label">Dynamic Island:</span> <span class="info-value" id="dynamic-island">Checking...</span></p>
         </div>
 
-        <!-- Confirmation Form -->
-        <div class="confirmation-box">
+        <!-- Confirmation Box -->
+        <div class="confirmation-box" id="confirmation-box">
             <p>Are your device details correct?</p>
             <button class="confirm-btn correct" onclick="showForm(true)">✔</button>
             <button class="confirm-btn incorrect" onclick="showForm(false)">✖</button>
@@ -28,23 +28,31 @@
 
         <!-- Correct Form -->
         <div class="form-box" id="correct-form" style="display: none;">
-            <p>Thanks for testing..</p>
+            <p>Earn one taco for your time</p>
             <label for="name">Your Name</label>
             <input type="text" id="name" placeholder="Enter your name">
-            <button class="submit-btn" id="submit-correct" onclick="submitForm(true)">Submit</button>
+            <button class="submit-btn" id="submit-correct" onclick="submitForm(true)">Earn Taco</button>
+            <button class="back-btn" onclick="goBack()">← Go back</button>
         </div>
 
         <!-- Incorrect Form -->
         <div class="form-box" id="incorrect-form" style="display: none;">
-            <p>Ah.. the code was wrong..</p>
+            <p>Oops.. we goofed eh?</p>
             <label for="incorrect-name">Your Name</label>
             <input type="text" id="incorrect-name" placeholder="Enter your name">
-            <label for="correct-device">Correct Device Model</label>
+            <label for="correct-device">Device model</label>
             <input type="text" id="correct-device" placeholder="Enter correct model">
-            <button class="submit-btn" id="submit-incorrect" onclick="submitForm(false)">Submit</button>
+            <button class="submit-btn" id="submit-incorrect" onclick="submitForm(false)">Earn Taco</button>
+            <button class="back-btn" onclick="goBack()">← Go back</button>
         </div>
 
-        <p class="footer-text">This data is ephemeral and does not persist.</p>
+        <!-- Danke (Thank You) Screen -->
+        <div class="danke-screen" id="danke-screen" style="display: none;">
+            <p>🌮 Danke!!! Tacos in your slack soon...</p>
+            <p class="footer-text">You are all done here</p>
+        </div>
+
+        <p class="footer-text">Oops we lied. This data will be viewed by some of your favorite people.</p>
     </div>
 
     <script src="detector.js"></script>

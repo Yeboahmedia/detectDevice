@@ -184,36 +184,44 @@ function sendToGoogleSheets(data, submitButton) {
 }
 
 
+// Show appropriate form when user selects correct/incorrect
+function showForm(isCorrect) {
+    document.getElementById("confirmation-box").classList.add("hide");
+    document.getElementById("correct-form").style.display = isCorrect ? "block" : "none";
+    document.getElementById("incorrect-form").style.display = isCorrect ? "none" : "block";
+}
+
+// Go back to confirmation screen
+function goBack() {
+    document.getElementById("confirmation-box").classList.remove("hide");
+    document.getElementById("correct-form").style.display = "none";
+    document.getElementById("incorrect-form").style.display = "none";
+}
+
 // Submit form data and send to Google Sheets
 function submitForm(isCorrect) {
     const name = isCorrect ? document.getElementById("name").value : document.getElementById("incorrect-name").value;
     const correctDevice = isCorrect ? "" : document.getElementById("correct-device").value;
-    const submitButton = isCorrect ? document.getElementById("submit-correct") : document.getElementById("submit-incorrect");
 
     if (!name.trim() || (!isCorrect && !correctDevice.trim())) {
         alert("Please fill in all fields!");
         return;
     }
 
-    // Disable submit button and change text
-    submitButton.innerText = "Submitting...";
-    submitButton.disabled = true;
+    // Hide all forms and show danke screen
+    document.getElementById("correct-form").style.display = "none";
+    document.getElementById("incorrect-form").style.display = "none";
+    document.getElementById("danke-screen").style.display = "block";
 
-    // Collect data
-    const data = {
-        timestamp: new Date().toISOString(),
-        userName: name,
-        isCorrect: isCorrect ? "Yes" : "No",
-        correctDevice: correctDevice || "N/A",
-        detectedDevice: document.getElementById("device-name").innerText,
-        screenSize: document.getElementById("screen-size").innerText,
-        gpu: document.getElementById("gpu-info").innerText,
-        promotion: document.getElementById("promotion").innerText,
-        dynamicIsland: document.getElementById("dynamic-island").innerText,
-    };
+    const googleSheetsUrl = "https://script.google.com/macros/s/AKfycbzt7oG5UGnqN9fMSebtm4b1v8l2eZBLjbATV5u5fJLtRHyNNzkR2yddomm-AVPlyRmhYQ/exec";  // Replace with your actual Google Apps Script URL
 
-    sendToGoogleSheets(data, submitButton);
+    fetch(googleSheetsUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userName: name, isCorrect, correctDevice })
+    });
 }
+
 
 
   // Run detection on page load.

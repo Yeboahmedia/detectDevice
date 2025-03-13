@@ -12,7 +12,7 @@ body {
 /* Main Container */
 .container {
     width: 300px;
-    /* background: #FFF; */
+    background: #FFF;
     border-radius: 32px;
     padding: 20px;
     text-align: center;
@@ -91,6 +91,11 @@ body {
     border-radius: 16px;
 }
 
+/* Hide confirmation when forms are shown */
+.hide {
+    display: none !important;
+}
+
 label {
     display: block;
     font-weight: 700;
@@ -116,10 +121,19 @@ input {
     cursor: pointer;
 }
 
-/* Footer Text */
-.footer-text {
-    font-size: 12px;
-    font-style: italic;
-    color: #5E646E;
-    margin-top: 20px;
+/* Back Button */
+.back-btn {
+    background: none;
+    border: none;
+    color: #2D2B2A;
+    font-size: 14px;
+    cursor: pointer;
+    margin-top: 10px;
+}
+
+/* Danke Screen */
+.danke-screen {
+    padding: 20px;
+    border-radius: 16px;
+    border: 2px dashed #000;
 }
