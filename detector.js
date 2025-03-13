@@ -48,29 +48,35 @@ function hasDynamicIsland(deviceName) {
 }
 
 // Update the UI elements on the page.
-function updateUI(deviceName, resolution, gpu, promotion, dynamicIsland) {
+function updateUI(deviceName, resolution, gpu, promotion, dynamicIsland, webglGPU) {
     document.getElementById("device-name").innerText = deviceName;
     document.getElementById("screen-size").innerText = resolution;
     document.getElementById("gpu-info").innerText = gpu;
     document.getElementById("promotion").innerText = promotion;
     document.getElementById("dynamic-island").innerText = dynamicIsland;
+    document.getElementById("webgl-gpu").innerText = webglGPU; // Show WebGL GPU result
 }
+
 
 // The main detection logic.
 async function detectAppleDevice() {
     const dpr = window.devicePixelRatio || 1;
     const physWidth = Math.round(window.screen.width * dpr);
     const physHeight = Math.round(window.screen.height * dpr);
-    const gpuRenderer = getGPUInfo();
+    const gpuRenderer = getGPUInfo(); // Get WebGL GPU Renderer
+
+    console.log(`Detected resolution: ${physWidth} x ${physHeight}`);
+    console.log(`WebGL GPU Renderer: ${gpuRenderer}`);
 
     // Fetch device specifications from YAML.
     const deviceData = await fetchDeviceData();
 
-    // Build a list of candidate devices matching physical resolution (allowing for orientation).
+    // Step 1: Find devices that match resolution (allow portrait & landscape).
     let candidates = [];
     Object.entries(deviceData).forEach(([device, specs]) => {
         if (!specs.resolution) return;
         const [specWidth, specHeight] = specs.resolution.split("x").map(Number);
+
         if (
             (physWidth === specWidth && physHeight === specHeight) ||
             (physWidth === specHeight && physHeight === specWidth)
@@ -79,59 +85,75 @@ async function detectAppleDevice() {
         }
     });
 
-    // If no candidate is found, or userAgent doesn't indicate iOS, handle as "Not iPhone/iPad"
+    console.log("Resolution-matched candidates:", candidates);
+
+    // Step 2: Ensure we're actually on an iPhone/iPad.
     const ua = navigator.userAgent;
     const isIOS = /iPhone|iPad/.test(ua);
 
     if (!isIOS || candidates.length === 0) {
+        console.warn("Device is either not an iPhone or no resolution match was found.");
         updateUI(
             "Not an iPhone or iPad",
             `${physWidth} x ${physHeight}`,
             gpuRenderer,
+            "N/A",
             "N/A",
             "N/A"
         );
         return;
     }
 
-    // If exactly one candidate, pick it. If multiple, attempt to narrow with GPU name.
+    // Step 3: If exactly one match, use it.
     let selectedDevice = candidates.length === 1 ? candidates[0] : null;
+
+    // Step 4: If multiple candidates exist, refine using GPU.
     if (candidates.length > 1) {
+        console.log("Multiple candidates found. Attempting to filter by GPU...");
         const filtered = candidates.filter(candidate => {
             return candidate.specs.gpu && gpuRenderer.includes(candidate.specs.gpu);
         });
-        selectedDevice = filtered.length > 0 ? filtered[0] : candidates[0];
+
+        if (filtered.length > 0) {
+            selectedDevice = filtered[0]; // Exact GPU match
+        } else {
+            console.warn("No exact GPU match found. Falling back to closest resolution match.");
+            selectedDevice = candidates[0]; // Use first resolution match
+        }
     }
 
-    // If no device is identified, fallback
+    // Step 5: Handle the case where no device is found.
     if (!selectedDevice) {
+        console.error("No valid device was identified.");
         updateUI(
             "Unknown Apple Device",
             `${physWidth} x ${physHeight}`,
             gpuRenderer,
             hasProMotion() ? "Yes (120Hz)" : "No",
-            "No"
+            "No",
+            gpuRenderer // Show actual WebGL result
         );
         return;
     }
 
-    // Use WebGL GPU if not masked, otherwise fallback to YAML
+    // Step 6: Use WebGL GPU if not masked, otherwise fallback to YAML
     let finalGPU = gpuRenderer === "Apple GPU" ? selectedDevice.specs.gpu : gpuRenderer;
 
-    // Determine ProMotion from YAML + heuristic
+    // Step 7: Determine ProMotion
     const fromYaml = (selectedDevice.specs.promotion || "").toLowerCase() === "true";
     const finalPromotion = fromYaml && hasProMotion() ? "Yes (120Hz)" : "No";
 
-    // Determine Dynamic Island
+    // Step 8: Determine Dynamic Island
     const finalDynamicIsland = hasDynamicIsland(selectedDevice.device) ? "Yes" : "No";
 
-    // Update UI
+    // Step 9: Update UI
     updateUI(
         selectedDevice.device,
         `${physWidth} x ${physHeight}`,
         finalGPU,
         finalPromotion,
-        finalDynamicIsland
+        finalDynamicIsland,
+        gpuRenderer // Add actual WebGL GPU result to UI
     );
 }
 
