@@ -94,11 +94,11 @@ function updateUI(deviceName, resolution, diagonalInches, diagonalMM, gpu, promo
  * @returns {number} - The difference score.
  */
 function weightedCandidateScore(candidate, computed) {
-  const tolWidth = 10;      // tolerance for logical width
-  const tolHeight = 10;     // tolerance for logical height
-  const tolScale = 0.2;     // tolerance for scale factor
-  const tolAspect = 0.05;   // tolerance for aspect ratio difference
-  const tolDiagonal = 0.5;  // tolerance for screen diagonal in inches
+  const tolWidth = 0;      // tolerance for logical width
+  const tolHeight = 0;     // tolerance for logical height
+  const tolScale = 0;     // tolerance for scale factor
+  const tolAspect = 0;   // tolerance for aspect ratio difference
+  const tolDiagonal = 0;  // tolerance for screen diagonal in inches
   
   let score = 0;
   score += Math.abs(computed.logicalWidth - Number(candidate.logical_width)) / tolWidth;
