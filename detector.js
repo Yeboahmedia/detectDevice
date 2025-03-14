@@ -73,7 +73,7 @@ async function fetchDeviceData() {
   
   // Determine ProMotion support by measuring FPS (threshold ~100Hz indicates ProMotion)
   async function detectProMotion() {
-    const fps = await measureFrameRate(1000);
+    const fps = await measureFrameRate(2000);
     return fps > 100;
   }
   
@@ -81,6 +81,13 @@ async function fetchDeviceData() {
   function computeAspectRatio(width, height) {
     return width / height;
   }
+
+  // Determine if the device has a Dynamic Island (for Pro models)
+  function hasDynamicIsland(deviceName) {
+    const lowerName = deviceName.toLowerCase();
+    return lowerName.includes("14 pro") || lowerName.includes("15 pro") || lowerName.includes("16 pro");
+  }
+  
   
   // Update UI elements
   function updateUI(deviceName, resolution, gpu, promotion, dynamicIsland, webglRenderer) {
