@@ -1150,7 +1150,7 @@
     "pro-motion": false,
     "release_date": "2022-10-07",
     "scale_factor": 3.0,
-    "screen_diagonal": 6.7,
+    "screen_diagonal": 6.68,
     "unique": false,
     "device": "iPhone 14 Plus"
   },
@@ -1165,7 +1165,7 @@
     "pro-motion": true,
     "release_date": "2022-09-16",
     "scale_factor": 3.0,
-    "screen_diagonal": 6.1,
+    "screen_diagonal": 6.12,
     "unique": false,
     "device": "iPhone 14 Pro"
   },
@@ -1180,7 +1180,7 @@
     "pro-motion": true,
     "release_date": "2022-09-16",
     "scale_factor": 3.0,
-    "screen_diagonal": 6.7,
+    "screen_diagonal": 6.69,
     "unique": false,
     "device": "iPhone 14 Pro Max"
   },
@@ -1210,7 +1210,7 @@
     "pro-motion": false,
     "release_date": "2023-09-22",
     "scale_factor": 3.0,
-    "screen_diagonal": 6.7,
+    "screen_diagonal": 6.69,
     "unique": false,
     "device": "iPhone 15 Plus"
   },
@@ -1225,7 +1225,7 @@
     "pro-motion": true,
     "release_date": "2023-09-22",
     "scale_factor": 3.0,
-    "screen_diagonal": 6.1,
+    "screen_diagonal": 6.12,
     "unique": false,
     "device": "iPhone 15 Pro"
   },
@@ -1240,7 +1240,7 @@
     "pro-motion": true,
     "release_date": "2023-09-22",
     "scale_factor": 3.0,
-    "screen_diagonal": 6.7,
+    "screen_diagonal": 6.69,
     "unique": false,
     "device": "iPhone 15 Pro Max"
   },
@@ -1285,7 +1285,7 @@
     "pro-motion": true,
     "release_date": "2024-09-09",
     "scale_factor": 3.0,
-    "screen_diagonal": 6.3,
+    "screen_diagonal": 6.27,
     "unique": false,
     "device": "iPhone 16 Pro"
   },
@@ -1300,7 +1300,7 @@
     "pro-motion": true,
     "release_date": "2024-09-09",
     "scale_factor": 3.0,
-    "screen_diagonal": 6.9,
+    "screen_diagonal": 6.86,
     "unique": false,
     "device": "iPhone 16 Pro Max"
   },
