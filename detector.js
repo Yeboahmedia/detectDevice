@@ -182,6 +182,7 @@ async function fetchDeviceData() {
     detectAppleDevice();
   });
   
+  
 
 // Show appropriate form when user selects correct/incorrect
 function showForm(isCorrect) {
