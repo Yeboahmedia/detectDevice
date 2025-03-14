@@ -13,27 +13,26 @@ async function fetchDeviceData() {
   
     for (const line of lines) {
       if (/^[^\s].*:$/.test(line)) {
-        // New device entry (key)
         currentDevice = line.split(":")[0].trim();
         devices[currentDevice] = {};
       } else if (currentDevice) {
         const [key, ...valueParts] = line.trim().split(":");
         let value = valueParts.join(":").trim();
   
-        // Normalize known prefixes for certain keys
-        if (key.trim() === "aspect_ratio") {
-          value = value.replace(/^Aspect Ratio:/i, "").trim();
+        // Normalize known keys by stripping prefixes (if any)
+        if (key.trim().toLowerCase() === "aspect_ratio") {
+          value = value.replace(/^(Aspect Ratio:)/i, "").trim();
         }
-        if (key.trim() === "release_date") {
-          value = value.replace(/^Release Date:/i, "").trim();
+        if (key.trim().toLowerCase() === "release_date") {
+          value = value.replace(/^(Release Date:)/i, "").trim();
         }
         // Convert numeric values if possible
         if (!isNaN(value)) {
           value = parseFloat(value);
         }
-        // Convert booleans
+        // Convert boolean strings
         if (value.toLowerCase() === "true" || value.toLowerCase() === "false") {
-          value = (value.toLowerCase() === "true");
+          value = value.toLowerCase() === "true";
         }
         devices[currentDevice][key.trim()] = value;
       }
@@ -72,7 +71,7 @@ async function fetchDeviceData() {
   // Alternative ProMotion check using measured frame rate
   async function detectProMotion() {
     const fps = await measureFrameRate(1000);
-    return fps > 100; // True if measured fps is above 100 (close to 120Hz)
+    return fps > 100; // True if measured fps is above ~100 (indicative of 120Hz)
   }
   
   // Determine if the device has a Dynamic Island (for Pro models)
@@ -81,11 +80,9 @@ async function fetchDeviceData() {
     return lowerName.includes("14 pro") || lowerName.includes("15 pro") || lowerName.includes("16 pro");
   }
   
-  // Compute aspect ratio from two numbers
+  // Compute aspect ratio as a decimal
   function computeAspectRatio(width, height) {
-    const gcd = (a, b) => (b === 0 ? a : gcd(b, a % b));
-    const divisor = gcd(width, height);
-    return `${width / divisor}:${height / divisor}`;
+    return width / height;
   }
   
   // Update the UI elements on the page.
@@ -106,29 +103,36 @@ async function fetchDeviceData() {
     const physicalWidth = Math.round(logicalWidth * dpr);
     const physicalHeight = Math.round(logicalHeight * dpr);
     const scaleFactor = dpr;
-    // We won't use our rough PPI calculation because it tends to overshoot.
-    // Instead, we rely on the YAML's ppi value directly.
-    const aspectRatio = computeAspectRatio(physicalWidth, physicalHeight);
+    const computedAspect = computeAspectRatio(physicalWidth, physicalHeight);
     const gpuRenderer = getGPUInfo();
     const measuredProMotion = await detectProMotion();
   
     console.log(`Logical: ${logicalWidth} x ${logicalHeight}`);
     console.log(`Physical: ${physicalWidth} x ${physicalHeight}`);
     console.log(`Scale Factor: ${scaleFactor}`);
-    console.log(`Aspect Ratio: ${aspectRatio}`);
-    console.log(`Measured FPS: ${measuredProMotion ? "High (ProMotion)" : "Low"}`);
+    console.log(`Computed Aspect Ratio: ${computedAspect.toFixed(3)}`);
+    console.log(`Measured FPS (ProMotion): ${measuredProMotion ? "High" : "Low"}`);
     console.log(`WebGL GPU: ${gpuRenderer}`);
   
     // Fetch device specs from YAML
     const deviceData = await fetchDeviceData();
   
     let candidates = [];
-    // Use tolerances for physical dimensions (±20), scale factor (±0.2), and require exact aspect ratio match.
+    // Use tolerances for physical dimensions (±30), scale factor (±0.2), and compare aspect ratio as decimals
     Object.entries(deviceData).forEach(([device, specs]) => {
-      const widthMatch = Math.abs(physicalWidth - specs.physical_width) <= 20;
-      const heightMatch = Math.abs(physicalHeight - specs.physical_height) <= 20;
+      const widthMatch = Math.abs(physicalWidth - specs.physical_width) <= 30;
+      const heightMatch = Math.abs(physicalHeight - specs.physical_height) <= 30;
       const scaleMatch = Math.abs(scaleFactor - specs.scale_factor) <= 0.2;
-      const aspectMatch = aspectRatio === specs.aspect_ratio;
+  
+      // Parse YAML aspect ratio (assumed format "9:19.5" or similar)
+      let yamlAspect = null;
+      if (typeof specs.aspect_ratio === "string" && specs.aspect_ratio.includes(":")) {
+        const parts = specs.aspect_ratio.split(":").map(parseFloat);
+        if (parts.length === 2 && parts[1] !== 0) {
+          yamlAspect = parts[0] / parts[1];
+        }
+      }
+      const aspectMatch = yamlAspect !== null && Math.abs(computedAspect - yamlAspect) < 0.05;
       const proMotionMatch = measuredProMotion === specs["pro-motion"];
   
       if (widthMatch && heightMatch && scaleMatch && aspectMatch && proMotionMatch) {
@@ -138,11 +142,14 @@ async function fetchDeviceData() {
   
     console.log("Candidates based on matching criteria:", candidates);
   
-    // If multiple candidates remain, further refine using GPU info if available (ignoring if GPU is "unknown")
-    if (candidates.length > 1) {
+    // If multiple candidates remain, refine using GPU if available (if GPU is not "unknown")
+    if (candidates.length > 1 && gpuRenderer.toLowerCase() !== "unknown") {
       const refined = candidates.filter(device => {
         const specs = deviceData[device];
-        return specs.gpu && gpuRenderer.toLowerCase().includes(specs.gpu.toLowerCase());
+        if (specs.gpu && specs.gpu.toLowerCase() !== "unknown") {
+          return gpuRenderer.toLowerCase().includes(specs.gpu.toLowerCase());
+        }
+        return false;
       });
       if (refined.length > 0) {
         candidates = refined;
@@ -156,6 +163,7 @@ async function fetchDeviceData() {
       detectedDevice = candidates.join(" | ");
     }
   
+    // Determine Dynamic Island status
     const dynamicIslandStatus = hasDynamicIsland(detectedDevice) ? "Yes" : "No";
   
     // Update UI with results
