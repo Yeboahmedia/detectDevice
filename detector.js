@@ -5,12 +5,11 @@ async function fetchDeviceData() {
     return parseYAML(yamlText);
   }
   
-  // YAML Parser for structured device data with basic normalization
   function parseYAML(yamlText) {
     const lines = yamlText.split("\n").filter(line => line.trim() && !line.trim().startsWith("#"));
     let devices = {};
     let currentDevice = null;
-    
+  
     for (const line of lines) {
       if (/^[^\s].*:$/.test(line)) {
         // New device entry
@@ -19,6 +18,7 @@ async function fetchDeviceData() {
       } else if (currentDevice) {
         const [key, ...valueParts] = line.trim().split(":");
         let value = valueParts.join(":").trim();
+  
         // Normalize known keys: remove prefixes for aspect_ratio and release_date if present.
         if (key.trim().toLowerCase() === "aspect_ratio") {
           value = value.replace(/^(Aspect Ratio:)/i, "").trim();
@@ -26,13 +26,16 @@ async function fetchDeviceData() {
         if (key.trim().toLowerCase() === "release_date") {
           value = value.replace(/^(Release Date:)/i, "").trim();
         }
-        // Convert numeric values when possible
+        // Convert numeric values if possible
         if (!isNaN(value)) {
           value = parseFloat(value);
         }
-        // Convert boolean strings
-        if (value.toLowerCase() === "true" || value.toLowerCase() === "false") {
-          value = (value.toLowerCase() === "true");
+        // If value is a string, convert boolean strings
+        if (typeof value === "string") {
+          const lowerVal = value.toLowerCase();
+          if (lowerVal === "true" || lowerVal === "false") {
+            value = lowerVal === "true";
+          }
         }
         devices[currentDevice][key.trim()] = value;
       }
