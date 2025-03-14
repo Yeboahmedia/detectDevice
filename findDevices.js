@@ -52,10 +52,10 @@ function filterDevicesByLogicalDimensions(devices, targetWidth, targetHeight, to
 
 // --- Example Usage ---
 // Define target values
-const targetDiagonal = 6.68;    // Example target screen diagonal
+const targetDiagonal = 6.12;    // Example target screen diagonal
 const targetScaleFactor = 3.0;  // Example target scale factor
-const targetLogicalWidth = 428; // Example target logical width
-const targetLogicalHeight = 926; // Example target logical height
+const targetLogicalWidth = 393; // Example target logical width
+const targetLogicalHeight = 852; // Example target logical height
 
 // Optional tolerances default to zero if not provided
 const diagonalTolerance = 0; 
