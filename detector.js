@@ -117,8 +117,8 @@
   
     // Apply filters in sequence
     let filteredDevices = filterDevicesByScreenDiagonal(devices, computedDiagonalInches, diagonalTolerance);
-    filteredDevices = filterDevicesByScaleFactor(filteredDevices, scaleFactor);
-    filteredDevices = filterDevicesByLogicalDimensions(filteredDevices, logicalWidth, logicalHeight, logicalTolerance);
+    // filteredDevices = filterDevicesByScaleFactor(filteredDevices, scaleFactor);
+    // filteredDevices = filterDevicesByLogicalDimensions(filteredDevices, logicalWidth, logicalHeight, logicalTolerance);
   
     // Return only the device names
     const deviceNames = filteredDevices.map(device => device.device);
@@ -137,7 +137,7 @@
     }
 
 
-    updateUI(deviceNames, resolutionStr, computedDiagonalInches, computedDiagonalMM, gpuRenderer);
+    updateUI(filteredDevices, resolutionStr, computedDiagonalInches, computedDiagonalMM, gpuRenderer);
   }
 
   // Call detectAppleDevice (or any other function that starts your process)
