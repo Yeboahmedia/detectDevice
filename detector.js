@@ -36,7 +36,7 @@ async function fetchDeviceData() {
         if (typeof value === "string") {
           const lowerVal = value.toLowerCase();
           if (lowerVal === "true" || lowerVal === "false") {
-            value = (lowerVal === "true");
+            value = lowerVal === "true";
           }
         }
         devices[currentDevice][key.trim()] = value;
@@ -110,19 +110,21 @@ async function fetchDeviceData() {
     return lowerName.includes("14 pro") || lowerName.includes("15 pro") || lowerName.includes("16 pro");
   }
   
-  // Update UI elements on the page.
-  function updateUI(deviceName, resolution, diagonal, gpu, promotion, dynamicIsland) {
+  // Update UI elements on the page, including candidate lists
+  function updateUI(deviceName, resolution, diagonal, gpu, promotion, dynamicIsland, candidates1, candidates2) {
     document.getElementById("device-name").innerText = deviceName;
     document.getElementById("screen-size").innerText = resolution;
     document.getElementById("screen-diagonal").innerText = diagonal.toFixed(2) + " inches";
     document.getElementById("gpu-info").innerText = gpu;
     document.getElementById("promotion").innerText = promotion;
     document.getElementById("dynamic-island").innerText = dynamicIsland;
+    document.getElementById("candidates_1").innerText = candidates1.length ? candidates1.join(" | ") : "None";
+    document.getElementById("candidates_2").innerText = candidates2.length ? candidates2.join(" | ") : "None";
   }
   
-  // Main device detection function combining all factors
+  // Main device detection function combining all factors in two stages
   async function detectAppleDevice() {
-    // Get logical dimensions (in points)
+    // Get logical dimensions (in points) and scale factor
     const logicalWidth = window.screen.width;
     const logicalHeight = window.screen.height;
     const scaleFactor = window.devicePixelRatio || 1;
@@ -134,7 +136,7 @@ async function fetchDeviceData() {
     // Compute aspect ratio from physical dimensions
     const computedAspect = computeAspectRatio(physicalWidth, physicalHeight);
     
-    // Get assumed PPI and compute screen diagonal (in inches)
+    // Compute screen diagonal using an assumed PPI
     const assumedPPI = getAssumedPPI();
     const computedDiagonal = computeScreenDiagonal(physicalWidth, physicalHeight, assumedPPI);
     
@@ -142,25 +144,35 @@ async function fetchDeviceData() {
     let measuredProMotion = await detectProMotion();
     const ua = navigator.userAgent;
     const isIOS = ua.includes("iPhone") || ua.includes("iPad");
-    // If on iOS and measuredProMotion is false (due to browser throttling), we could override here if needed.
-    // For now, we use the measured value.
+    // (Optionally override measuredProMotion if known issues arise)
     
-    // Get GPU info for optional refinement
+    // Get GPU info (for refinement)
     const gpuRenderer = getGPUInfo();
     
     // Fetch device specs from YAML
     const deviceData = await fetchDeviceData();
     
-    // Set matching tolerances
+    // Set tolerances
     const logicalTol = 10;       // tolerance for logical dimensions (points)
     const scaleTol = 0.2;        // tolerance for scale factor
     const aspectTol = 0.05;      // tolerance for aspect ratio difference (decimal)
     const diagonalTol = 0.5;     // tolerance for screen diagonal (inches)
     
-    let candidates = [];
+    // Stage 1: Candidates based solely on screen diagonal matching
+    let candidates1 = [];
     Object.entries(deviceData).forEach(([device, specs]) => {
-      const logicalWidthMatch = Math.abs(logicalWidth - specs.logical_width) <= logicalTol;
-      const logicalHeightMatch = Math.abs(logicalHeight - specs.logical_height) <= logicalTol;
+      const diagMatch = Math.abs(computedDiagonal - specs.screen_diagonal) <= diagonalTol;
+      if (diagMatch) {
+        candidates1.push(device);
+      }
+    });
+    
+    // Stage 2: From candidates1, further filter using logical dimensions, scale, and aspect ratio
+    let candidates2 = [];
+    candidates1.forEach(device => {
+      const specs = deviceData[device];
+      const lwMatch = Math.abs(logicalWidth - specs.logical_width) <= logicalTol;
+      const lhMatch = Math.abs(logicalHeight - specs.logical_height) <= logicalTol;
       const scaleMatch = Math.abs(scaleFactor - specs.scale_factor) <= scaleTol;
       
       let yamlAspect = null;
@@ -172,17 +184,14 @@ async function fetchDeviceData() {
       }
       const aspectMatch = yamlAspect !== null && Math.abs(computedAspect - yamlAspect) <= aspectTol;
       
-      const proMotionMatch = measuredProMotion === specs["pro-motion"];
-      const diagonalMatch = Math.abs(computedDiagonal - specs.screen_diagonal) <= diagonalTol;
-      
-      if (logicalWidthMatch && logicalHeightMatch && scaleMatch && aspectMatch && proMotionMatch && diagonalMatch) {
-        candidates.push(device);
+      if (lwMatch && lhMatch && scaleMatch && aspectMatch) {
+        candidates2.push(device);
       }
     });
     
-    // If multiple candidates remain, refine using GPU info if available (and GPU isn't "unknown")
-    if (candidates.length > 1 && gpuRenderer.toLowerCase() !== "unknown") {
-      const refined = candidates.filter(device => {
+    // Optional: refine candidates2 further using GPU info if available
+    if (candidates2.length > 1 && gpuRenderer.toLowerCase() !== "unknown") {
+      const refined = candidates2.filter(device => {
         const specs = deviceData[device];
         if (specs.gpu && specs.gpu.toLowerCase() !== "unknown") {
           return gpuRenderer.toLowerCase().includes(specs.gpu.toLowerCase());
@@ -190,26 +199,31 @@ async function fetchDeviceData() {
         return false;
       });
       if (refined.length > 0) {
-        candidates = refined;
+        candidates2 = refined;
       }
     }
     
+    // Final detected device: if one candidate in candidates2, use it; if multiple, join them.
     let detectedDevice = "Unknown Apple Device";
-    if (candidates.length === 1) {
-      detectedDevice = candidates[0];
-    } else if (candidates.length > 1) {
-      detectedDevice = candidates.join(" | ");
+    if (candidates2.length === 1) {
+      detectedDevice = candidates2[0];
+    } else if (candidates2.length > 1) {
+      detectedDevice = candidates2.join(" | ");
     }
     
     const dynamicIslandStatus = hasDynamicIsland(detectedDevice) ? "Yes" : "No";
+    const resolutionStr = `${logicalWidth} x ${logicalHeight} (Scale: ${scaleFactor})`;
+    const promotionStr = measuredProMotion ? "Yes (120Hz)" : "No";
     
     updateUI(
       detectedDevice,
-      `${logicalWidth} x ${logicalHeight} (Scale: ${scaleFactor})`,
+      resolutionStr,
       computedDiagonal,
       gpuRenderer,
-      measuredProMotion ? "Yes (120Hz)" : "No",
-      dynamicIslandStatus
+      promotionStr,
+      dynamicIslandStatus,
+      candidates1,
+      candidates2
     );
   }
   
