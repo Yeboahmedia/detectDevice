@@ -1,4 +1,4 @@
-// Fetch and parse the JSON file containing device specs (converted from YAML)
+// Fetch and parse the JSON file containing device specs
 async function fetchDeviceData() {
   const response = await fetch("devices.json");
   const jsonText = await response.text();
@@ -55,7 +55,7 @@ function computeScreenDiagonal(physicalWidth, physicalHeight, assumedPPI) {
   return diagonalPixels / assumedPPI;
 }
 
-// Extract WebGL GPU information
+// Extract WebGL GPU information (optional, for refinement)
 function getGPUInfo() {
   const canvas = document.createElement("canvas");
   const gl = canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
@@ -70,7 +70,61 @@ function hasDynamicIsland(deviceName) {
   return lowerName.includes("14 pro") || lowerName.includes("15 pro") || lowerName.includes("16 pro");
 }
 
-// Update UI elements on the page, including candidate lists and both diagonal values
+// -------------------------
+// Weighted Candidate Filtering
+// -------------------------
+
+/**
+ * Compute a weighted score for a candidate device.
+ * Lower scores indicate a closer match.
+ * @param {Object} candidate - Device spec object from JSON.
+ * @param {Object} computed - Computed values from the current device.
+ * @returns {number} - The computed score.
+ */
+function weightedCandidateScore(candidate, computed) {
+  // Define tolerances for normalization (these values can be tuned)
+  const tolWidth = 10;      // logical width tolerance (points)
+  const tolHeight = 10;     // logical height tolerance (points)
+  const tolScale = 0.2;     // scale factor tolerance
+  const tolAspect = 0.05;   // aspect ratio tolerance (decimal)
+  const tolDiagonal = 0.5;  // screen diagonal tolerance (inches)
+  let score = 0;
+  
+  // Logical dimensions difference (normalized by tolerance)
+  score += Math.abs(computed.logicalWidth - candidate.logical_width) / tolWidth;
+  score += Math.abs(computed.logicalHeight - candidate.logical_height) / tolHeight;
+  
+  // Scale factor difference
+  score += Math.abs(computed.scaleFactor - candidate.scale_factor) / tolScale;
+  
+  // Aspect ratio difference: parse candidate's aspect_ratio from "W:H"
+  let candidateAspect = null;
+  if (typeof candidate.aspect_ratio === "string" && candidate.aspect_ratio.includes(":")) {
+    const parts = candidate.aspect_ratio.split(":").map(parseFloat);
+    if (parts.length === 2 && parts[1] !== 0) {
+      candidateAspect = parts[0] / parts[1];
+    }
+  }
+  if (candidateAspect !== null) {
+    score += Math.abs(computed.computedAspect - candidateAspect) / tolAspect;
+  } else {
+    score += 5; // penalty if candidate aspect ratio cannot be determined
+  }
+  
+  // Screen diagonal difference
+  score += Math.abs(computed.computedDiagonalInches - candidate.screen_diagonal) / tolDiagonal;
+  
+  // ProMotion: if measured doesn't match candidate's "pro-motion", add a penalty.
+  if (computed.measuredProMotion !== candidate["pro-motion"]) {
+    score += 10;
+  }
+  
+  return score;
+}
+
+// -------------------------
+// Update UI
+// -------------------------
 function updateUI(deviceName, resolution, diagonalInches, diagonalMM, gpu, promotion, dynamicIsland, candidates1, candidates2) {
   document.getElementById("device-name").innerText = deviceName;
   document.getElementById("screen-size").innerText = resolution;
@@ -83,91 +137,72 @@ function updateUI(deviceName, resolution, diagonalInches, diagonalMM, gpu, promo
   document.getElementById("candidates_2").innerText = candidates2.length ? candidates2.join(" | ") : "None";
 }
 
-// Main device detection function combining all factors in two stages
+// -------------------------
+// Main Detection Function
+// -------------------------
 async function detectAppleDevice() {
-  // Get logical dimensions (in points) and scale factor
+  // Get logical dimensions (points) and scale factor
   const logicalWidth = window.screen.width;
   const logicalHeight = window.screen.height;
   const scaleFactor = window.devicePixelRatio || 1;
   
-  // Compute physical dimensions (in pixels)
+  // Compute physical dimensions (pixels)
   const physicalWidth = Math.round(logicalWidth * scaleFactor);
   const physicalHeight = Math.round(logicalHeight * scaleFactor);
   
   // Compute aspect ratio from physical dimensions
   const computedAspect = computeAspectRatio(physicalWidth, physicalHeight);
   
-  // Compute screen diagonal (in inches) using an assumed PPI
+  // Get assumed PPI and compute screen diagonal (in inches and mm)
   const assumedPPI = getAssumedPPI();
   const computedDiagonalInches = computeScreenDiagonal(physicalWidth, physicalHeight, assumedPPI);
-  const computedDiagonalMM = computedDiagonalInches * 25.4; // Convert inches to millimeters
+  const computedDiagonalMM = computedDiagonalInches * 25.4;
   
   // Get measured ProMotion support
   let measuredProMotion = await detectProMotion();
   const ua = navigator.userAgent;
   const isIOS = ua.includes("iPhone") || ua.includes("iPad");
-  // Optionally override measuredProMotion if needed on iOS
-  if (isIOS && !measuredProMotion) {
-    // For now, we'll keep the measured value
-  }
+  // (Optional: override measuredProMotion if needed)
   
-  // Get GPU info for refinement
+  // Get GPU info
   const gpuRenderer = getGPUInfo();
   
-  // Fetch device specs from devices.json (converted from YAML)
+  // Create an object with computed values for weighted scoring
+  const computed = {
+    logicalWidth,
+    logicalHeight,
+    scaleFactor,
+    computedAspect,
+    computedDiagonalInches,
+    measuredProMotion
+  };
+  
+  // Fetch device specs from devices.json
   const deviceData = await fetchDeviceData();
   
-  // Set tolerances for matching
-  const logicalTol = 10;       // tolerance for logical dimensions (points)
-  const scaleTol = 0.2;        // tolerance for scale factor
-  const aspectTol = 0.05;      // tolerance for aspect ratio difference (decimal)
-  const diagonalTol = 0.5;     // tolerance for screen diagonal (inches)
-  
-  // Stage 1: Filter candidates based solely on screen diagonal matching
+  // Stage 1: Filter candidates by screen diagonal only
   let candidates1 = [];
   Object.entries(deviceData).forEach(([device, specs]) => {
-    const diagMatch = Math.abs(computedDiagonalInches - Number(specs.screen_diagonal)) <= diagonalTol;
-    if (diagMatch) {
+    if (Math.abs(computedDiagonalInches - Number(specs.screen_diagonal)) <= 0.5) {
       candidates1.push(device);
     }
   });
   
-  // Stage 2: From candidates1, further filter using logical dimensions, scale factor, and aspect ratio
-  let candidates2 = [];
-  candidates1.forEach(device => {
-    const specs = deviceData[device];
-    const lwMatch = Math.abs(logicalWidth - Number(specs.logical_width)) <= logicalTol;
-    const lhMatch = Math.abs(logicalHeight - Number(specs.logical_height)) <= logicalTol;
-    const scaleMatch = Math.abs(scaleFactor - Number(specs.scale_factor)) <= scaleTol;
-    
-    let yamlAspect = null;
-    if (typeof specs.aspect_ratio === "string" && specs.aspect_ratio.includes(":")) {
-      const parts = specs.aspect_ratio.split(":").map(parseFloat);
-      if (parts.length === 2 && parts[1] !== 0) {
-        yamlAspect = parts[0] / parts[1];
-      }
-    }
-    const aspectMatch = yamlAspect !== null && Math.abs(computedAspect - yamlAspect) <= aspectTol;
-    
-    if (lwMatch && lhMatch && scaleMatch && aspectMatch) {
-      candidates2.push(device);
-    }
-  });
-  
-  // Optional: refine candidates2 further using GPU info if available
-  if (candidates2.length > 1 && gpuRenderer.toLowerCase() !== "unknown") {
-    const refined = candidates2.filter(device => {
-      const specs = deviceData[device];
-      if (specs.gpu && specs.gpu.toLowerCase() !== "unknown") {
-        return gpuRenderer.toLowerCase().includes(specs.gpu.toLowerCase());
-      }
-      return false;
-    });
-    if (refined.length > 0) {
-      candidates2 = refined;
-    }
+  // Stage 2: Compute weighted scores for each candidate in deviceData
+  let candidateScores = [];
+  for (const device in deviceData) {
+    const score = weightedCandidateScore(deviceData[device], computed);
+    candidateScores.push({ device, score });
   }
+  // Sort candidates by score (lowest score is best match)
+  candidateScores.sort((a, b) => a.score - b.score);
   
+  // For UI, candidates2 will be the ones from weighted scoring with a threshold near the best score.
+  const bestScore = candidateScores[0] ? candidateScores[0].score : Infinity;
+  const threshold = bestScore + 1; // allow all candidates within 1 score of best
+  let candidates2 = candidateScores.filter(c => c.score <= threshold).map(c => c.device);
+  
+  // Final detected device: if one candidate in candidates2, use it; if multiple, join them.
   let detectedDevice = "Unknown Apple Device";
   if (candidates2.length === 1) {
     detectedDevice = candidates2[0];
@@ -196,8 +231,9 @@ document.addEventListener("DOMContentLoaded", function () {
   detectAppleDevice();
 });
 
-// --- Form and Submission Logic --- //
-
+// -------------------------
+// Form and Submission Logic
+// -------------------------
 function showForm(isCorrect) {
   document.getElementById("confirmation-box").classList.add("hide");
   document.getElementById("correct-form").style.display = isCorrect ? "block" : "none";
@@ -232,4 +268,50 @@ function submitForm(isCorrect) {
   document.getElementById("incorrect-form").style.display = "none";
   document.getElementById("confirmation-box").style.display = "none";
   document.getElementById("danke-screen").style.display = "block";
+}
+
+/**
+ * Compute a weighted score for a candidate device.
+ * Lower scores indicate a closer match.
+ * @param {Object} candidate - Candidate device specs from JSON.
+ * @param {Object} computed - Computed values from the current device.
+ * @returns {number} - The weighted difference score.
+ */
+function weightedCandidateScore(candidate, computed) {
+  const tolWidth = 10;      // logical width tolerance (points)
+  const tolHeight = 10;     // logical height tolerance (points)
+  const tolScale = 0.2;     // scale factor tolerance
+  const tolAspect = 0.05;   // aspect ratio tolerance (decimal)
+  const tolDiagonal = 0.5;  // diagonal tolerance (inches)
+  
+  let score = 0;
+  // Logical dimensions differences
+  score += Math.abs(computed.logicalWidth - Number(candidate.logical_width)) / tolWidth;
+  score += Math.abs(computed.logicalHeight - Number(candidate.logical_height)) / tolHeight;
+  // Scale factor difference
+  score += Math.abs(computed.scaleFactor - Number(candidate.scale_factor)) / tolScale;
+  
+  // Aspect ratio difference: parse candidate aspect ratio (format "W:H")
+  let candidateAspect = null;
+  if (typeof candidate.aspect_ratio === "string" && candidate.aspect_ratio.includes(":")) {
+    const parts = candidate.aspect_ratio.split(":").map(parseFloat);
+    if (parts.length === 2 && parts[1] !== 0) {
+      candidateAspect = parts[0] / parts[1];
+    }
+  }
+  if (candidateAspect !== null) {
+    score += Math.abs(computed.computedAspect - candidateAspect) / tolAspect;
+  } else {
+    score += 5; // add penalty if candidate aspect ratio is unavailable
+  }
+  
+  // Screen diagonal difference
+  score += Math.abs(computed.computedDiagonalInches - Number(candidate.screen_diagonal)) / tolDiagonal;
+  
+  // ProMotion penalty if mismatch (add a large penalty)
+  if (computed.measuredProMotion !== candidate["pro-motion"]) {
+    score += 10;
+  }
+  
+  return score;
 }
