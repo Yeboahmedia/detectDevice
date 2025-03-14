@@ -110,11 +110,12 @@ async function fetchDeviceData() {
     return lowerName.includes("14 pro") || lowerName.includes("15 pro") || lowerName.includes("16 pro");
   }
   
-  // Update UI elements on the page, including candidate lists
-  function updateUI(deviceName, resolution, diagonal, gpu, promotion, dynamicIsland, candidates1, candidates2) {
+  // Update UI elements on the page, including candidate lists and both diagonal values
+  function updateUI(deviceName, resolution, diagonalInches, diagonalMM, gpu, promotion, dynamicIsland, candidates1, candidates2) {
     document.getElementById("device-name").innerText = deviceName;
     document.getElementById("screen-size").innerText = resolution;
-    document.getElementById("screen-diagonal").innerText = diagonal.toFixed(2) + " inches";
+    document.getElementById("screen-diagonal").innerText = diagonalInches.toFixed(2) + " inches";
+    document.getElementById("screen-diagonal-mm").innerText = diagonalMM.toFixed(2) + " mm";
     document.getElementById("gpu-info").innerText = gpu;
     document.getElementById("promotion").innerText = promotion;
     document.getElementById("dynamic-island").innerText = dynamicIsland;
@@ -136,17 +137,21 @@ async function fetchDeviceData() {
     // Compute aspect ratio from physical dimensions
     const computedAspect = computeAspectRatio(physicalWidth, physicalHeight);
     
-    // Compute screen diagonal using an assumed PPI
+    // Compute screen diagonal (in inches) using an assumed PPI
     const assumedPPI = getAssumedPPI();
-    const computedDiagonal = computeScreenDiagonal(physicalWidth, physicalHeight, assumedPPI);
+    const computedDiagonalInches = computeScreenDiagonal(physicalWidth, physicalHeight, assumedPPI);
+    const computedDiagonalMM = computedDiagonalInches * 25.4; // Convert inches to millimeters
     
     // Get measured ProMotion support
     let measuredProMotion = await detectProMotion();
     const ua = navigator.userAgent;
     const isIOS = ua.includes("iPhone") || ua.includes("iPad");
-    // (Optionally override measuredProMotion if known issues arise)
+    // Optionally, override measuredProMotion if necessary for iOS
+    if (isIOS && !measuredProMotion) {
+      // For demonstration, we'll leave it; you could set measuredProMotion = true if you know your device supports it.
+    }
     
-    // Get GPU info (for refinement)
+    // Get GPU info for optional refinement
     const gpuRenderer = getGPUInfo();
     
     // Fetch device specs from YAML
@@ -161,7 +166,7 @@ async function fetchDeviceData() {
     // Stage 1: Candidates based solely on screen diagonal matching
     let candidates1 = [];
     Object.entries(deviceData).forEach(([device, specs]) => {
-      const diagMatch = Math.abs(computedDiagonal - specs.screen_diagonal) <= diagonalTol;
+      const diagMatch = Math.abs(computedDiagonalInches - specs.screen_diagonal) <= diagonalTol;
       if (diagMatch) {
         candidates1.push(device);
       }
@@ -203,7 +208,6 @@ async function fetchDeviceData() {
       }
     }
     
-    // Final detected device: if one candidate in candidates2, use it; if multiple, join them.
     let detectedDevice = "Unknown Apple Device";
     if (candidates2.length === 1) {
       detectedDevice = candidates2[0];
@@ -218,7 +222,8 @@ async function fetchDeviceData() {
     updateUI(
       detectedDevice,
       resolutionStr,
-      computedDiagonal,
+      computedDiagonalInches,
+      computedDiagonalMM,
       gpuRenderer,
       promotionStr,
       dynamicIslandStatus,
