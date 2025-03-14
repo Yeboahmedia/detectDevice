@@ -13,13 +13,12 @@ async function fetchDeviceData() {
     
     for (const line of lines) {
       if (/^[^\s].*:$/.test(line)) {
-        // New device entry (key)
+        // New device entry
         currentDevice = line.split(":")[0].trim();
         devices[currentDevice] = {};
       } else if (currentDevice) {
         const [key, ...valueParts] = line.trim().split(":");
         let value = valueParts.join(":").trim();
-        
         // Normalize known keys: remove prefixes for aspect_ratio and release_date if present.
         if (key.trim().toLowerCase() === "aspect_ratio") {
           value = value.replace(/^(Aspect Ratio:)/i, "").trim();
@@ -27,7 +26,6 @@ async function fetchDeviceData() {
         if (key.trim().toLowerCase() === "release_date") {
           value = value.replace(/^(Release Date:)/i, "").trim();
         }
-        
         // Convert numeric values if possible
         if (!isNaN(value)) {
           value = parseFloat(value);
@@ -36,13 +34,22 @@ async function fetchDeviceData() {
         if (typeof value === "string") {
           const lowerVal = value.toLowerCase();
           if (lowerVal === "true" || lowerVal === "false") {
-            value = lowerVal === "true";
+            value = (lowerVal === "true");
           }
         }
         devices[currentDevice][key.trim()] = value;
       }
     }
     return devices;
+  }
+  
+  // Extract WebGL GPU information (still available if needed for refinement)
+  function getGPUInfo() {
+    const canvas = document.createElement("canvas");
+    const gl = canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
+    if (!gl) return "Unknown GPU";
+    const debugInfo = gl.getExtension("WEBGL_debug_renderer_info");
+    return debugInfo ? gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL) : "Apple GPU";
   }
   
   // Measure the actual frame rate over a given duration (ms)
@@ -75,13 +82,25 @@ async function fetchDeviceData() {
     return width / height;
   }
   
-  // Compute screen diagonal in inches using physical dimensions and an assumed PPI
-  function computeScreenDiagonal(physicalWidth, physicalHeight, assumedPPI = 326) {
+  // Function to return an assumed PPI based on device type
+  function getAssumedPPI() {
+    const ua = navigator.userAgent;
+    if (ua.includes("iPad")) {
+      return 264; // Typical for iPads
+    } else if (ua.includes("iPhone")) {
+      return 460; // Typical for modern iPhones
+    } else {
+      return 96;  // Fallback for non-mobile devices
+    }
+  }
+  
+  // Compute screen diagonal (in inches) using physical dimensions and an assumed PPI
+  function computeScreenDiagonal(physicalWidth, physicalHeight, assumedPPI) {
     const diagonalPixels = Math.sqrt(physicalWidth ** 2 + physicalHeight ** 2);
     return diagonalPixels / assumedPPI;
   }
   
-  // Determine if the device name indicates a Dynamic Island (for Pro models)
+  // Determine if the device name suggests a Dynamic Island (for Pro models)
   function hasDynamicIsland(deviceName) {
     const lowerName = deviceName.toLowerCase();
     return lowerName.includes("14 pro") || lowerName.includes("15 pro") || lowerName.includes("16 pro");
@@ -98,7 +117,7 @@ async function fetchDeviceData() {
   
   // Main device detection function combining all factors
   async function detectAppleDevice() {
-    // Logical dimensions from window.screen (in points)
+    // Get logical dimensions from window.screen (in points)
     const logicalWidth = window.screen.width;
     const logicalHeight = window.screen.height;
     const scaleFactor = window.devicePixelRatio || 1;
@@ -110,24 +129,29 @@ async function fetchDeviceData() {
     // Compute aspect ratio from physical dimensions
     const computedAspect = computeAspectRatio(physicalWidth, physicalHeight);
     
-    // Compute screen diagonal (in inches) using an assumed PPI (e.g., 326)
-    const computedDiagonal = computeScreenDiagonal(physicalWidth, physicalHeight, 326);
-    
     // Get measured ProMotion support
     const measuredProMotion = await detectProMotion();
     
-    console.log(`Logical Resolution: ${logicalWidth} x ${logicalHeight}`);
-    console.log(`Physical Resolution: ${physicalWidth} x ${physicalHeight}`);
+    // Get WebGL GPU info (for optional refinement)
+    const gpuRenderer = getGPUInfo();
+    
+    // Compute screen diagonal using an assumed PPI (based on device type)
+    const assumedPPI = getAssumedPPI();
+    const computedDiagonal = computeScreenDiagonal(physicalWidth, physicalHeight, assumedPPI);
+    
+    console.log(`Logical: ${logicalWidth} x ${logicalHeight}`);
+    console.log(`Physical: ${physicalWidth} x ${physicalHeight}`);
     console.log(`Scale Factor: ${scaleFactor}`);
     console.log(`Computed Aspect Ratio: ${computedAspect.toFixed(3)}`);
-    console.log(`Computed Screen Diagonal: ${computedDiagonal.toFixed(2)} inches`);
+    console.log(`Computed Screen Diagonal: ${computedDiagonal.toFixed(2)} inches (Assumed PPI: ${assumedPPI})`);
     console.log(`Measured ProMotion: ${measuredProMotion}`);
+    console.log(`WebGL GPU: ${gpuRenderer}`);
     
-    // Fetch device specifications from YAML
+    // Fetch device specs from YAML
     const deviceData = await fetchDeviceData();
     
-    // Tolerances for matching (you may adjust these)
-    const logicalTol = 10;       // tolerance for logical dimensions (points)
+    // Set tolerances (you may adjust these as needed)
+    const logicalTol = 10;       // tolerance for logical dimensions in points
     const scaleTol = 0.2;        // tolerance for scale factor
     const aspectTol = 0.05;      // tolerance for aspect ratio difference (decimal)
     const diagonalTol = 0.5;     // tolerance for screen diagonal (inches)
@@ -139,7 +163,6 @@ async function fetchDeviceData() {
       const logicalHeightMatch = Math.abs(logicalHeight - specs.logical_height) <= logicalTol;
       // Check scale factor
       const scaleMatch = Math.abs(scaleFactor - specs.scale_factor) <= scaleTol;
-      
       // Parse YAML aspect ratio (assumed format "9:21")
       let yamlAspect = null;
       if (typeof specs.aspect_ratio === "string" && specs.aspect_ratio.includes(":")) {
@@ -149,11 +172,9 @@ async function fetchDeviceData() {
         }
       }
       const aspectMatch = yamlAspect !== null && Math.abs(computedAspect - yamlAspect) <= aspectTol;
-      
-      // Check ProMotion support from YAML (boolean)
+      // Check ProMotion support
       const proMotionMatch = measuredProMotion === specs["pro-motion"];
-      
-      // Check screen diagonal matching (in inches) against YAML value
+      // Check screen diagonal (in inches)
       const diagonalMatch = Math.abs(computedDiagonal - specs.screen_diagonal) <= diagonalTol;
       
       if (logicalWidthMatch && logicalHeightMatch && scaleMatch && aspectMatch && proMotionMatch && diagonalMatch) {
@@ -163,7 +184,20 @@ async function fetchDeviceData() {
     
     console.log("Candidates based on matching criteria:", candidates);
     
-    // If multiple candidates remain, join them with " | "
+    // If multiple candidates remain, try to refine using GPU info if available (if GPU isn't "unknown")
+    if (candidates.length > 1 && gpuRenderer.toLowerCase() !== "unknown") {
+      const refined = candidates.filter(device => {
+        const specs = deviceData[device];
+        if (specs.gpu && specs.gpu.toLowerCase() !== "unknown") {
+          return gpuRenderer.toLowerCase().includes(specs.gpu.toLowerCase());
+        }
+        return false;
+      });
+      if (refined.length > 0) {
+        candidates = refined;
+      }
+    }
+    
     let detectedDevice = "Unknown Apple Device";
     if (candidates.length === 1) {
       detectedDevice = candidates[0];
@@ -188,7 +222,7 @@ async function fetchDeviceData() {
     detectAppleDevice();
   });
   
-  // --- Form and Submission Logic (unchanged) --- //
+  // --- Form and Submission Logic ---
   
   function showForm(isCorrect) {
     document.getElementById("confirmation-box").classList.add("hide");
@@ -215,12 +249,12 @@ async function fetchDeviceData() {
   
     fetch(googleSheetsUrl, {
       method: "POST",
-      mode: 'no-cors',
+      mode: "no-cors",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ userName: name, isCorrect, correctDevice })
     });
   
-    // Hide forms and show Danke screen
+    // Hide all forms and show danke screen
     document.getElementById("correct-form").style.display = "none";
     document.getElementById("incorrect-form").style.display = "none";
     document.getElementById("confirmation-box").style.display = "none";
