@@ -1,70 +1,70 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Apple Device Detector</title>
-    <link rel="stylesheet" href="styles.css">
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@200;400;700&display=swap" rel="stylesheet">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Apple Device Detector</title>
+  <link rel="stylesheet" href="styles.css">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@200;400;700&display=swap" rel="stylesheet">
 </head>
 <body>
 
-    <div class="container">
-        <h1 class="device-title" id="device-name">Detecting device...</h1>
+  <div class="container">
+    <h1 class="device-title" id="device-name">Detecting device...</h1>
 
-        <div class="device-info">
-            <p><span class="info-label">Screen Size:</span> <span class="info-value" id="screen-size">Checking...</span></p>
-            <p><span class="info-label">GPU:</span> <span class="info-value" id="gpu-info">Checking...</span></p>
-            <p><span class="info-label">WebGL GPU:</span> <span class="info-value" id="webgl-gpu">Checking...</span></p>
-            <p><span class="info-label">ProMotion (120Hz):</span> <span class="info-value" id="promotion">Checking...</span></p>
-            <p><span class="info-label">Dynamic Island:</span> <span class="info-value" id="dynamic-island">Checking...</span></p>
-        </div>
-
-        <!-- Confirmation Box -->
-        <div class="confirmation-box" id="confirmation-box">
-            <p>Are your device details correct?</p>
-            <div class="button-group">
-            <button class="confirm-btn correct" onclick="showForm(true)">
-                <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <rect width="48" height="48" rx="16" fill="#2CC05C"/>
-                    <path d="M20.3677 32C19.8545 32 19.3414 31.8068 18.9363 31.3928L14.588 26.9495C14.2113 26.56 14 26.0345 14 25.4868C14 24.9392 14.2113 24.4137 14.588 24.0241C15.3712 23.2238 16.6676 23.2238 17.4508 24.0241L20.3677 27.0047L30.5497 16.6003C31.333 15.7999 32.6293 15.7999 33.4126 16.6003C34.1958 17.4006 34.1958 18.7253 33.4126 19.5257L21.7991 31.3928C21.394 31.8068 20.8808 32 20.3677 32Z" fill="#0A462F"/>
-                </svg>
-            </button>
-            <button class="confirm-btn incorrect" onclick="showForm(false)">
-                <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <rect width="48" height="48" rx="16" fill="#E74C3C"/>
-                    <path d="M14 14L34 34M34 14L14 34" stroke="white" stroke-width="4" stroke-linecap="round"/>
-                </svg>
-            </button>
-        </div>
-        </div>
-
-        <!-- Correct Form -->
-        <div class="form-box" id="correct-form" style="display: none;">
-            <p>Earn one taco for your time</p>
-            <label for="name">Your Name</label>
-            <input type="text" id="name" placeholder="Enter your name">
-            <button class="submit-btn" onclick="submitForm(true)">Submit</button>
-        </div>
-
-        <!-- Incorrect Form -->
-        <div class="form-box" id="incorrect-form" style="display: none;">
-            <p>Ah.. the code was wrong..</p>
-            <label for="incorrect-name">Your Name</label>
-            <input type="text" id="incorrect-name" placeholder="Enter your name">
-            <label for="correct-device">Correct Device Model</label>
-            <input type="text" id="correct-device" placeholder="Enter correct model">
-            <button class="submit-btn" onclick="submitForm(false)">Submit</button>
-        </div>
-
-        <!-- Danke (Thank You) Screen -->
-        <div class="danke-screen" id="danke-screen" style="display: none;">
-            <p class="danke-text">🌮 Danke!!! Tacos in your slack soon...</p>
-        </div>
-
-        <p class="footer-text">This data will be used by some of your favorite people to debug and fix issues</p>
+    <div class="device-info">
+      <p><span class="info-label">Screen Size:</span> <span class="info-value" id="screen-size">Checking...</span></p>
+      <p><span class="info-label">Screen Diagonal:</span> <span class="info-value" id="screen-diagonal">Checking...</span></p>
+      <p><span class="info-label">GPU:</span> <span class="info-value" id="gpu-info">Checking...</span></p>
+      <p><span class="info-label">ProMotion (120Hz):</span> <span class="info-value" id="promotion">Checking...</span></p>
+      <p><span class="info-label">Dynamic Island:</span> <span class="info-value" id="dynamic-island">Checking...</span></p>
     </div>
 
-    <script src="detector.js"></script>
+    <!-- Confirmation Box -->
+    <div class="confirmation-box" id="confirmation-box">
+      <p>Are your device details correct?</p>
+      <div class="button-group">
+        <button class="confirm-btn correct" onclick="showForm(true)">
+          <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect width="48" height="48" rx="16" fill="#2CC05C"/>
+            <path d="M20.3677 32C19.8545 32 19.3414 31.8068 18.9363 31.3928L14.588 26.9495C14.2113 26.56 14 26.0345 14 25.4868C14 24.9392 14.2113 24.4137 14.588 24.0241C15.3712 23.2238 16.6676 23.2238 17.4508 24.0241L20.3677 27.0047L30.5497 16.6003C31.333 15.7999 32.6293 15.7999 33.4126 16.6003C34.1958 17.4006 34.1958 18.7253 33.4126 19.5257L21.7991 31.3928C21.394 31.8068 20.8808 32 20.3677 32Z" fill="#0A462F"/>
+          </svg>
+        </button>
+        <button class="confirm-btn incorrect" onclick="showForm(false)">
+          <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect width="48" height="48" rx="16" fill="#E74C3C"/>
+            <path d="M14 14L34 34M34 14L14 34" stroke="white" stroke-width="4" stroke-linecap="round"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Correct Form -->
+    <div class="form-box" id="correct-form" style="display: none;">
+      <p>Earn one taco for your time</p>
+      <label for="name">Your Name</label>
+      <input type="text" id="name" placeholder="Enter your name">
+      <button class="submit-btn" onclick="submitForm(true)">Submit</button>
+    </div>
+
+    <!-- Incorrect Form -->
+    <div class="form-box" id="incorrect-form" style="display: none;">
+      <p>Ah.. the code was wrong..</p>
+      <label for="incorrect-name">Your Name</label>
+      <input type="text" id="incorrect-name" placeholder="Enter your name">
+      <label for="correct-device">Correct Device Model</label>
+      <input type="text" id="correct-device" placeholder="Enter correct model">
+      <button class="submit-btn" onclick="submitForm(false)">Submit</button>
+    </div>
+
+    <!-- Danke (Thank You) Screen -->
+    <div class="danke-screen" id="danke-screen" style="display: none;">
+      <p class="danke-text">🌮 Danke!!! Tacos in your slack soon...</p>
+    </div>
+
+    <p class="footer-text">This data will be used by some of your favorite people to debug and fix issues</p>
+  </div>
+
+  <script src="detector.js"></script>
 </body>
 </html>
