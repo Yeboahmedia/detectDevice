@@ -73,24 +73,47 @@
     const physicalWidth = Math.round(logicalWidth * scaleFactor);
     const physicalHeight = Math.round(logicalHeight * scaleFactor);
     
-    // Compute aspect ratio (from physical dimensions)
-    const computedAspect = computeAspectRatio(physicalWidth, physicalHeight);
+
+    // Get an assumed PPI based on the user agent (for screen diagonal calculation)
+    function getAssumedPPI() {
+      const ua = navigator.userAgent;
+      if (ua.includes("iPad")) {
+        return 264;
+      } else if (ua.includes("iPhone")) {
+        return 460;
+      } else if (ua.includes("Macintosh")) {
+        return 220;
+      } else {
+        return 96;
+      }
+    }
+
+    // Compute screen diagonal (in inches) using physical dimensions and an assumed PPI
+    function computeScreenDiagonal(physicalWidth, physicalHeight, assumedPPI) {
+      const diagonalPixels = Math.sqrt(physicalWidth ** 2 + physicalHeight ** 2);
+      return diagonalPixels / assumedPPI;
+    }
+
     
     // Get assumed PPI and compute screen diagonal (in inches) and in mm
     const assumedPPI = getAssumedPPI();
     const computedDiagonalInches = computeScreenDiagonal(physicalWidth, physicalHeight, assumedPPI);
     const computedDiagonalMM = computedDiagonalInches * 25.4;
-    
-    // Get measured ProMotion support
-    let measuredProMotion = await detectProMotion();
-    const ua = navigator.userAgent;
-    const isIOS = ua.includes("iPhone") || ua.includes("iPad");
-    // (Optional: override measuredProMotion if needed on iOS)
+  
+
+    // Extract WebGL GPU information
+    function getGPUInfo() {
+      const canvas = document.createElement("canvas");
+      const gl = canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
+      if (!gl) return "Unknown GPU";
+      const debugInfo = gl.getExtension("WEBGL_debug_renderer_info");
+      return debugInfo ? gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL) : "Apple GPU";
+    }
+        
     
     // Get GPU info
     const gpuRenderer = getGPUInfo();
     const resolutionStr = `${logicalWidth} x ${logicalHeight} (Scale: ${scaleFactor})`;
-    const promotionStr = measuredProMotion ? "Yes (120Hz)" : "No";
   
     // Apply filters in sequence
     let filteredDevices = filterDevicesByScreenDiagonal(devices, computedDiagonalInches, diagonalTolerance);
@@ -106,8 +129,7 @@
       resolutionStr,
       computedDiagonalInches,
       computedDiagonalMM,
-      gpuRenderer,
-      promotionStr,
+      gpuRenderer
     );
   }
 
