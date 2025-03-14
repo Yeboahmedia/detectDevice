@@ -57,7 +57,7 @@
   }
 
   // Optional tolerances default to zero if not provided
-  const diagonalTolerance = 0; 
+  const diagonalTolerance = 0.005; 
   const logicalTolerance = 0; 
 
   // -------------------------
@@ -94,7 +94,6 @@
       return diagonalPixels / assumedPPI;
     }
 
-    
     // Get assumed PPI and compute screen diagonal (in inches) and in mm
     const assumedPPI = getAssumedPPI();
     const computedDiagonalInches = computeScreenDiagonal(physicalWidth, physicalHeight, assumedPPI);
@@ -115,10 +114,14 @@
     const gpuRenderer = getGPUInfo();
     const resolutionStr = `${logicalWidth} x ${logicalHeight} (Scale: ${scaleFactor})`;
   
+    console.log(computedDiagonalInches, diagonalTolerance)
+
     // Apply filters in sequence
     let filteredDevices = filterDevicesByScreenDiagonal(devices, computedDiagonalInches, diagonalTolerance);
-    // filteredDevices = filterDevicesByScaleFactor(filteredDevices, scaleFactor);
-    // filteredDevices = filterDevicesByLogicalDimensions(filteredDevices, logicalWidth, logicalHeight, logicalTolerance);
+    console.log(filteredDevices)
+
+    filteredDevices = filterDevicesByScaleFactor(filteredDevices, scaleFactor);
+    filteredDevices = filterDevicesByLogicalDimensions(filteredDevices, logicalWidth, logicalHeight, logicalTolerance);
   
     // Return only the device names
     const deviceNames = filteredDevices.map(device => device.device);
@@ -137,7 +140,7 @@
     }
 
 
-    updateUI(filteredDevices, resolutionStr, computedDiagonalInches, computedDiagonalMM, gpuRenderer);
+    updateUI(deviceNames, resolutionStr, computedDiagonalInches, computedDiagonalMM, gpuRenderer);
   }
 
   // Call detectAppleDevice (or any other function that starts your process)
