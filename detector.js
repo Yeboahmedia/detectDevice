@@ -123,16 +123,27 @@
     // Return only the device names
     const deviceNames = filteredDevices.map(device => device.device);
   
+
+
     // Update UI
-    updateUI(
-      deviceNames,
-      resolutionStr,
-      computedDiagonalInches,
-      computedDiagonalMM,
-      gpuRenderer
-    );
+
+    // Update UI elements on the page, including candidate lists and both diagonal values
+    function updateUI(deviceName, resolution, diagonalInches, diagonalMM, gpu) {
+      document.getElementById("device-name").innerText = deviceName;
+      document.getElementById("screen-size").innerText = resolution;
+      document.getElementById("screen-diagonal").innerText = diagonalInches.toFixed(2) + " inches";
+      document.getElementById("screen-diagonal-mm").innerText = diagonalMM.toFixed(2) + " mm";
+      document.getElementById("gpu-info").innerText = gpu;
+    }
+
+
+    updateUI(deviceNames, resolutionStr, computedDiagonalInches, computedDiagonalMM, gpuRenderer);
   }
 
   // Call detectAppleDevice (or any other function that starts your process)
   detectAppleDevice();
 })();
+
+
+
+  
