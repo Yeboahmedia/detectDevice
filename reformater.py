@@ -1,35 +1,40 @@
-import yaml
 import json
+import re
 
-# Load the YAML file (assumes the file is named 'devices.yaml')
-with open('ios_devices.yaml', 'r') as file:
-    data = yaml.safe_load(file)
-    print (data)
-# 'data' is expected to be a dict with a key "devices"
-devices = data.get("devices", {})
-print(devices)
+def convert_screen_diagonal(diagonal_str):
+    """
+    Extracts a float from a screen diagonal string.
+    E.g., "16.2\"" becomes 16.2.
+    """
+    # Use regex to capture the numeric portion (including decimals)
+    match = re.search(r"([\d\.]+)", diagonal_str)
+    if match:
+        return float(match.group(1))
+    else:
+        raise ValueError(f"Cannot convert screen diagonal value: {diagonal_str}")
 
-# Create a list to hold the converted device dictionaries
-converted_devices = []
-
-for device_name, device_info in devices.items():
-    print(device_name)
-    # Remove the "Aspect Ratio:" artifact from the aspect_ratio value if present
-    if "aspect_ratio" in device_info and isinstance(device_info["aspect_ratio"], str):
-        device_info["aspect_ratio"] = device_info["aspect_ratio"].replace("Aspect Ratio:", "").strip()
+def reformat_json_file(input_filename, output_filename):
+    # Load JSON data from input file
+    with open(input_filename, 'r') as infile:
+        data = json.load(infile)
     
-    # Remove the "Release Date:" artifact from the release_date value if present
-    if "release_date" in device_info and isinstance(device_info["release_date"], str):
-        device_info["release_date"] = device_info["release_date"].replace("Release Date:", "").strip()
+    # Process each device in the data list
+    for device in data:
+        if "Screen Diagonal" in device:
+            original_value = device["Screen Diagonal"]
+            try:
+                # Convert the string value to a float
+                device["Screen Diagonal"] = convert_screen_diagonal(original_value)
+            except ValueError as e:
+                print(f"Warning: {e}")
     
-    # Optionally add the device name into the dictionary (if you need it in the JSON)
-    device_info["device"] = device_name
+    # Write the updated data to output file with pretty-printing
+    with open(output_filename, 'w') as outfile:
+        json.dump(data, outfile, indent=2)
     
-    # Append the cleaned device info to the list
-    converted_devices.append(device_info)
+    print(f"Reformatted JSON data has been written to {output_filename}")
 
-# Save the converted data to a JSON file (e.g., 'devices.json')
-with open('devices.json', 'w') as json_file:
-    json.dump(converted_devices, json_file, indent=2)
-
-print("Conversion complete. JSON file 'devices.json' created.")
+if __name__ == "__main__":
+    input_file = "mac_devices.json"    # Replace with your actual input file name
+    output_file = "mac_with_screens_devices.json"  # Replace with your desired output file name
+    reformat_json_file(input_file, output_file)

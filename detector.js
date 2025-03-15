@@ -9,7 +9,7 @@
   
   // Fetch and parse the JSON file containing device specs
   async function fetchDeviceData() {
-    const response = await fetch("devices.json");
+    const response = await fetch("apple_mobile_device.json");
     const jsonData = await response.json();
     return jsonData; // JSON is expected to be an array of device objects
   }

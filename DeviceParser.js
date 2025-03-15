@@ -91,7 +91,7 @@ export function parseDevices(deviceInput) {
     // Filter out empty model details.
     const models = groups[key].filter(model => model !== '');
     if (models.length > 0) {
-      resultParts.push(`${key} ${models.join('|')}`);
+      resultParts.push(`${key} ${models.join(' | ')}`);
     } else {
       resultParts.push(key);
     }
