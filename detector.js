@@ -113,13 +113,40 @@
     // Get GPU info
     const gpuRenderer = getGPUInfo();
     const resolutionStr = `${logicalWidth} x ${logicalHeight} (Scale: ${scaleFactor})`;
-  
-    console.log(computedDiagonalInches, diagonalTolerance)
+
+
+    // Measure the actual frame rate over a given duration (ms)
+    function measureFrameRate(duration = 1000) {
+      return new Promise(resolve => {
+        let frameCount = 0;
+        const startTime = performance.now();
+        function frame() {
+          frameCount++;
+          const elapsed = performance.now() - startTime;
+          if (elapsed < duration) {
+            requestAnimationFrame(frame);
+          } else {
+            const fps = frameCount / (elapsed / 1000);
+            resolve(fps);
+          }
+        }
+        requestAnimationFrame(frame);
+      });
+    }
+
+    // Determine ProMotion support by measuring FPS (threshold ~100Hz indicates ProMotion)
+    async function detectProMotion() {
+      const fps = await measureFrameRate(1000);
+      return fps;
+    }
+
+    let measuredProMotion = await detectProMotion();
+
+    const promotionStr = measuredProMotion
 
     // Apply filters in sequence
     let filteredDevices = filterDevicesByScreenDiagonal(devices, computedDiagonalInches, diagonalTolerance);
     console.log(filteredDevices)
-
     filteredDevices = filterDevicesByScaleFactor(filteredDevices, scaleFactor);
     filteredDevices = filterDevicesByLogicalDimensions(filteredDevices, logicalWidth, logicalHeight, logicalTolerance);
   
@@ -137,6 +164,8 @@
       document.getElementById("screen-diagonal").innerText = diagonalInches.toFixed(2) + " inches";
       document.getElementById("screen-diagonal-mm").innerText = diagonalMM.toFixed(2) + " mm";
       document.getElementById("gpu-info").innerText = gpu;
+      document.getElementById("promotion").innerText = promotionStr;
+
     }
 
 
