@@ -147,10 +147,8 @@
     
     // Return only the device names
     let deviceNames = filteredDevices.map(device => device.device);
+    deviceNames = parseDevices(deviceNames);
 
-    // if (deviceNames.length > 1) {
-    //   deviceNames = parseDevices(deviceNames);
-    // }
   
     // Update UI elements on the page, including candidate lists and diagonal values
     function updateUI(deviceName, resolution, diagonalInches, diagonalMM, gpuInfo) {
