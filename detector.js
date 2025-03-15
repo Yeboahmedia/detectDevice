@@ -154,11 +154,7 @@
       document.getElementById("screen-diagonal").innerText = diagonalInches.toFixed(2) + " inches";
       document.getElementById("screen-diagonal-mm").innerText = diagonalMM.toFixed(2) + " mm";
       
-      const gpuText = `WEBGL_MASKED: ${gpuInfo.WEBGL_MASKED}
-Vendor: ${gpuInfo.vendor}
-ANGLE Type: ${gpuInfo.angleType}
-GPU Model: ${gpuInfo.gpu}
-GPU Version: ${gpuInfo.gpuVersion}`;
+      const gpuText = gpuInfo.gpu ;
       
       document.getElementById("gpu-info").innerText = gpuText;
       document.getElementById("promotion").innerText = promotionStr;
