@@ -32,21 +32,24 @@ function parseRendererInfo(rendererString) {
       if (match) {
         result.vendor = match[1].trim();
         result.angleType = match[2].trim();
-        // Capture GPU model if available
         result.gpu = match[3] ? match[3].trim() : "";
         result.gpuVersion = match[4].trim().replace(/^Version\s+/i, "");
+  
+        // If the GPU model starts with "Metal Renderer:", remove that prefix.
+        if (result.gpu) {
+          result.gpu = result.gpu.replace(/^Metal Renderer:\s*/i, "");
+        }
         
         // If GPU model is not provided, infer it from the ANGLE type.
         if (!result.gpu && result.angleType) {
-          // Remove the "ANGLE" prefix if it exists and trim the result.
           result.gpu = result.angleType.replace(/^ANGLE\s*/i, '').trim();
+          result.gpu = result.gpu.replace(/^Metal Renderer:\s*/i, "").trim();
         }
         return result;
       }
     }
     
     // Fallback for non-ANGLE strings (e.g., "Mesa DRI Intel(R) HD Graphics 520")
-    // This heuristic searches for common vendor names.
     const vendors = ["Intel", "AMD", "NVIDIA", "Apple"];
     for (let vendor of vendors) {
       if (rendererString.indexOf(vendor) !== -1) {
