@@ -145,7 +145,7 @@
     filteredDevices = filterDevicesByLogicalDimensions(filteredDevices, logicalWidth, logicalHeight, logicalTolerance);
     
     // Return only the device names
-    const deviceNames = filteredDevices.map(device => device.device);
+    let deviceNames = filteredDevices.map(device => device.device);
 
     if (deviceNames.length > 1) {
       deviceNames = parseDevices(deviceNames);
