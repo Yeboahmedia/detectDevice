@@ -22,7 +22,7 @@
  * @param {string | string[]} deviceInput - A string with device names separated by '|' or an array of device names.
  * @returns {string} The parsed device string with grouped models.
  */
-function parseDevices(deviceInput) {
+export function parseDevices(deviceInput) {
   let devices;
   if (typeof deviceInput === 'string') {
     // If input is a string, split it by "|" and trim whitespace.
@@ -104,4 +104,3 @@ function parseDevices(deviceInput) {
 
 
 // Export using CommonJS syntax.
-module.exports = { parseDevices };
