@@ -25,7 +25,8 @@
     const isMac = /macintosh|mac os/i.test(platformInfo);
     
     // Exclude devices with multiple touch points (e.g., iPads).
-    return isMac && (navigator.maxTouchPoints === 0 || navigator.maxTouchPoints === 1);
+    // return isMac && (navigator.maxTouchPoints === 0 || navigator.maxTouchPoints === 1);
+    return false
   }
   
   

@@ -4,8 +4,8 @@
  * Supported categories include: "apple watch", "iphone", "ipad", "ipod", and "mac".
  * For each device, the function extracts a simplified detail:
  *  - For Mac devices, it returns the full product name and screen size (e.g. "MacBook Pro 14 inch").
- *  - For other devices, if a numeric token is present after the category (e.g., "14" in "iphone 14 pro"),
- *    that number is used.
+ *  - For other devices, if the text after the category starts with a numeric token,
+ *    the entire remainder is used (so "iphone 14 pro" becomes "14 pro").
  *  - Otherwise, the remaining text (after the category name) is trimmed and used.
  *
  * Devices that do not match any category are returned as-is.
@@ -18,7 +18,7 @@
  *       "ipad pro", "macbook air", "apple watch series 3", "MacBook Pro (14-inch, 2023)"
  *   ]
  *
- *   Output (example): "iphone xr | 14 | 15, ipod touch, ipad pro, macbook air, apple watch series 3, MacBook Pro 14 inch"
+ *   Output (example): "iphone xr | 14 pro | 15 pro, ipod touch, ipad pro, macbook air, apple watch series 3, MacBook Pro 14 inch"
  *
  * @param {string | string[]} deviceInput - A string with device names separated by '|' or an array of device names.
  * @returns {string} The parsed device string with grouped models.
@@ -66,12 +66,12 @@ export function parseDevices(deviceInput) {
       // Fallback: if the regex doesn't match, return the original device.
       return device;
     }
-    // For non-Mac devices: remove the category keyword and look for a numeric token.
+    // For non-Mac devices: remove the category keyword and use the remainder.
     const regex = new RegExp(categoryKey, 'i');
     let remainder = device.replace(regex, '').trim();
-    const numMatch = remainder.match(/\b(\d+)\b/);
-    if (numMatch) {
-      return numMatch[1];
+    // If remainder starts with a number, return the full remainder (e.g. "14 pro").
+    if (/^\d+/.test(remainder)) {
+      return remainder;
     }
     return remainder.toLowerCase();
   }
