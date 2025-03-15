@@ -3,21 +3,22 @@
  *
  * Supported categories include: "apple watch", "iphone", "ipad", "ipod", and "mac".
  * For each device, the function extracts a simplified detail:
- *  - If a numeric token is present after the category (e.g., "14" in "iphone 14 pro"),
+ *  - For Mac devices, it returns the full product name and screen size (e.g. "MacBook Pro 14 inch").
+ *  - For other devices, if a numeric token is present after the category (e.g., "14" in "iphone 14 pro"),
  *    that number is used.
  *  - Otherwise, the remaining text (after the category name) is trimmed and used.
  *
  * Devices that do not match any category are returned as-is.
  *
  * Examples:
- *   Input (string): "iphone XR | iphone 14 pro | iphone 15 pro | ipod touch | ipad pro | macbook air | apple watch series 3"
+ *   Input (string): "iphone XR | iphone 14 pro | iphone 15 pro | ipod touch | ipad pro | macbook air | apple watch series 3 | MacBook Pro (14-inch, 2023)"
  *
  *   Input (array): [
  *       "iphone XR", "iphone 14 pro", "iphone 15 pro", "ipod touch",
- *       "ipad pro", "macbook air", "apple watch series 3"
+ *       "ipad pro", "macbook air", "apple watch series 3", "MacBook Pro (14-inch, 2023)"
  *   ]
  *
- *   Output: "iphone xr|14|15, ipod touch, ipad pro, mac  book air, apple watch series 3"
+ *   Output (example): "iphone xr | 14 | 15, ipod touch, ipad pro, macbook air, apple watch series 3, MacBook Pro 14 inch"
  *
  * @param {string | string[]} deviceInput - A string with device names separated by '|' or an array of device names.
  * @returns {string} The parsed device string with grouped models.
@@ -50,15 +51,28 @@ export function parseDevices(deviceInput) {
 
   // Helper: extract a simplified model from the device string.
   function extractModel(device, categoryKey) {
-    // Remove the category keyword (case-insensitive) from the device name.
+    if (categoryKey === 'mac') {
+      // Custom extraction for Mac devices.
+      // This regex tries to capture common Mac product names and their screen size.
+      // It will match products like "MacBook Pro", "MacBook Air", or "iMac"
+      // followed by any characters until a parenthesis containing a screen size.
+      const macRegex = /(MacBook Pro|MacBook Air|iMac)[^()]*\(([\d]+)(?:-inch)?/i;
+      const match = device.match(macRegex);
+      if (match) {
+        const productName = match[1].trim();
+        const screenSize = match[2].trim();
+        return `${productName} ${screenSize} inch`;
+      }
+      // Fallback: if the regex doesn't match, return the original device.
+      return device;
+    }
+    // For non-Mac devices: remove the category keyword and look for a numeric token.
     const regex = new RegExp(categoryKey, 'i');
     let remainder = device.replace(regex, '').trim();
-    // Look for a numeric token.
     const numMatch = remainder.match(/\b(\d+)\b/);
     if (numMatch) {
       return numMatch[1];
     }
-    // Return the remaining text in lowercase.
     return remainder.toLowerCase();
   }
 
@@ -91,7 +105,12 @@ export function parseDevices(deviceInput) {
     // Filter out empty model details.
     const models = groups[key].filter(model => model !== '');
     if (models.length > 0) {
-      resultParts.push(`${key} ${models.join(' | ')}`);
+      if (key === 'mac') {
+        // For mac devices, output the full parsed names without prefixing "mac".
+        resultParts.push(models.join(' | '));
+      } else {
+        resultParts.push(`${key} ${models.join(' | ')}`);
+      }
     } else {
       resultParts.push(key);
     }
@@ -101,6 +120,3 @@ export function parseDevices(deviceInput) {
 
   return resultParts.join(', ');
 }
-
-
-// Export using CommonJS syntax.
