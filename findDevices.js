@@ -71,3 +71,9 @@ const deviceNames = filteredDevices.map(device => device.device);
 
 console.log("Filtered devices (device names):");
 console.log(deviceNames);
+
+
+const { parseDevices } = require('./DeviceParser');
+  
+// const testString = "iphone XR | iphone 14 pro | iphone 15 pro | ipod touch | ipad pro | macbook air | apple watch series 3";
+console.log(parseDevices(deviceNames));
