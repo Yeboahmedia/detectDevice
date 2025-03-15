@@ -1,4 +1,9 @@
 (async function() {
+  // Dynamically import the GPU parser module.
+  // Adjust the path ('./gpuParser.js') as needed.
+  const gpuParserModule = await import('./gpuParser.js');
+  const { getParsedGPUInfo } = gpuParserModule;
+  
   // Fetch and parse the JSON file containing device specs
   async function fetchDeviceData() {
     const response = await fetch("devices.json");
@@ -61,7 +66,7 @@
   const logicalTolerance = 0; 
 
   // -------------------------
-  // computation on device
+  // Computation on device
   // -------------------------
   async function detectAppleDevice() {
     // Get logical dimensions (points) and scale factor
@@ -73,7 +78,6 @@
     const physicalWidth = Math.round(logicalWidth * scaleFactor);
     const physicalHeight = Math.round(logicalHeight * scaleFactor);
     
-
     // Get an assumed PPI based on the user agent (for screen diagonal calculation)
     function getAssumedPPI() {
       const ua = navigator.userAgent;
@@ -99,31 +103,12 @@
     const computedDiagonalInches = computeScreenDiagonal(physicalWidth, physicalHeight, assumedPPI);
     const computedDiagonalMM = computedDiagonalInches * 25.4;
   
-
-    // Extract WebGL GPU information
-    function getGPUInfo() {
-      const canvas = document.createElement("canvas");
-      const gl = canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
-      if (!gl) return "Unknown GPU";
-    
-      // Try to get detailed info using the debug extension
-      const debugInfo = gl.getExtension("WEBGL_debug_renderer_info");
-      if (debugInfo) {
-        return gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL);
-      } else {
-        // Fallback: return the vendor and renderer parameters
-        const vendor = gl.getParameter(gl.VENDOR);
-        const renderer = gl.getParameter(gl.RENDERER);
-        return `${renderer} (${vendor})`;
-      }
-    }
-    
-        
-    
-    // Get GPU info
-    const gpuRenderer = getGPUInfo();
+    // Get and parse GPU info from the dynamically imported module.
+    // This returns an object like:
+    // { WEBGL_MASKED, vendor, angleType, gpu, gpuVersion }
+    const parsedGPUInfo = getParsedGPUInfo();
+  
     const resolutionStr = `${logicalWidth} x ${logicalHeight} (Scale: ${scaleFactor})`;
-
 
     // Measure the actual frame rate over a given duration (ms)
     function measureFrameRate(duration = 1000) {
@@ -151,41 +136,37 @@
     }
 
     let measuredProMotion = await detectProMotion();
-
-    const promotionStr = measuredProMotion
+    const promotionStr = measuredProMotion;
 
     // Apply filters in sequence
     let filteredDevices = filterDevicesByScreenDiagonal(devices, computedDiagonalInches, diagonalTolerance);
-    console.log(filteredDevices)
+    console.log(filteredDevices);
     filteredDevices = filterDevicesByScaleFactor(filteredDevices, scaleFactor);
     filteredDevices = filterDevicesByLogicalDimensions(filteredDevices, logicalWidth, logicalHeight, logicalTolerance);
   
     // Return only the device names
     const deviceNames = filteredDevices.map(device => device.device);
   
-
-
-    // Update UI
-
-    // Update UI elements on the page, including candidate lists and both diagonal values
-    function updateUI(deviceName, resolution, diagonalInches, diagonalMM, gpu) {
+    // Update UI elements on the page, including candidate lists and diagonal values
+    function updateUI(deviceName, resolution, diagonalInches, diagonalMM, gpuInfo) {
       document.getElementById("device-name").innerText = deviceName;
       document.getElementById("screen-size").innerText = resolution;
       document.getElementById("screen-diagonal").innerText = diagonalInches.toFixed(2) + " inches";
       document.getElementById("screen-diagonal-mm").innerText = diagonalMM.toFixed(2) + " mm";
-      document.getElementById("gpu-info").innerText = gpu;
+      
+      const gpuText = `WEBGL_MASKED: ${gpuInfo.WEBGL_MASKED}
+Vendor: ${gpuInfo.vendor}
+ANGLE Type: ${gpuInfo.angleType}
+GPU Model: ${gpuInfo.gpu}
+GPU Version: ${gpuInfo.gpuVersion}`;
+      
+      document.getElementById("gpu-info").innerText = gpuText;
       document.getElementById("promotion").innerText = promotionStr;
-
     }
 
-
-    updateUI(deviceNames, resolutionStr, computedDiagonalInches, computedDiagonalMM, gpuRenderer);
+    updateUI(deviceNames, resolutionStr, computedDiagonalInches, computedDiagonalMM, parsedGPUInfo);
   }
 
   // Call detectAppleDevice (or any other function that starts your process)
   detectAppleDevice();
 })();
-
-
-
-  
