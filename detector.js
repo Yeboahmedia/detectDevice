@@ -11,13 +11,23 @@
    * @returns {boolean} - True if the device is a Mac, false otherwise.
    */
   function isMacDevice() {
-    // Log values for debugging purposes.
+    let platformInfo = "";
     
-    // Check if the platform contains "Mac" and ensure there are no (or very few) touch points.
-    // iPads on iPadOS 13+ may report "MacIntel" in navigator.platform, so we ensure maxTouchPoints is less than 2.
-    return navigator.platform.toUpperCase().indexOf('MAC') >= 0 &&
-           (navigator.maxTouchPoints === 0 || navigator.maxTouchPoints === 1);
+    // Use the modern userAgentData API if available.
+    if (navigator.userAgentData && navigator.userAgentData.platform) {
+      platformInfo = navigator.userAgentData.platform;
+    } else {
+      // Fallback: use navigator.userAgent as a backup.
+      platformInfo = navigator.userAgent;
+    }
+    
+    // Check if the platform info indicates a macOS device.
+    const isMac = /macintosh|mac os/i.test(platformInfo);
+    
+    // Exclude devices with multiple touch points (e.g., iPads).
+    return isMac && (navigator.maxTouchPoints === 0 || navigator.maxTouchPoints === 1);
   }
+  
   
   /**
    * Fetch and parse the JSON file containing device specs.
@@ -28,7 +38,7 @@
   async function fetchDeviceData(deviceType = "mobile") {
     const jsonUrl = deviceType === "mac" 
                     ? "mac_with_screens_devices.json" 
-                    : "apple_mobile_device.json";
+                    : "apple_mobile_devices.json";
     const response = await fetch(jsonUrl);
     const jsonData = await response.json();
     return jsonData;
@@ -167,12 +177,14 @@
     let filteredDevices = [];
     if (isMac) {
       filteredDevices = filterDevicesByLogicalDimensions(devices, logicalWidth, logicalHeight, logicalTolerance);
-      console.log(filteredDevices);
       filteredDevices = filterDevicesByScaleFactor(filteredDevices, scaleFactor);
     } else {
-      filteredDevices = filterDevicesByScreenDiagonal(devices, computedDiagonalInches, diagonalTolerance);
+      console.log('here');
+      filteredDevices = filterDevicesByLogicalDimensions(devices, logicalWidth, logicalHeight, logicalTolerance);
       filteredDevices = filterDevicesByScaleFactor(filteredDevices, scaleFactor);
-      filteredDevices = filterDevicesByLogicalDimensions(filteredDevices, logicalWidth, logicalHeight, logicalTolerance);
+      console.log(filteredDevices);
+      filteredDevices = filterDevicesByScreenDiagonal(devices, computedDiagonalInches, diagonalTolerance);
+
     }
     
     // Extract device names and parse them
