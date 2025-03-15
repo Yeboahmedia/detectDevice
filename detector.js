@@ -2,8 +2,10 @@
   // Dynamically import the GPU parser module.
   // Adjust the path ('./gpuParser.js') as needed.
   const gpuParserModule = await import('./gpuParser.js');
-  const parseDevices = await import('./DeviceParser.js');
+  const parseDevicesModule = await import('./DeviceParser.js');
   const { getParsedGPUInfo } = gpuParserModule;
+  const { parseDevices } = parseDevicesModule
+
   
   // Fetch and parse the JSON file containing device specs
   async function fetchDeviceData() {
