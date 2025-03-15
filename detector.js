@@ -105,9 +105,19 @@
       const canvas = document.createElement("canvas");
       const gl = canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
       if (!gl) return "Unknown GPU";
+    
+      // Try to get detailed info using the debug extension
       const debugInfo = gl.getExtension("WEBGL_debug_renderer_info");
-      return debugInfo ? gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL) : "Apple GPU";
+      if (debugInfo) {
+        return gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL);
+      } else {
+        // Fallback: return the vendor and renderer parameters
+        const vendor = gl.getParameter(gl.VENDOR);
+        const renderer = gl.getParameter(gl.RENDERER);
+        return `${renderer} (${vendor})`;
+      }
     }
+    
         
     
     // Get GPU info
@@ -137,7 +147,7 @@
     // Determine ProMotion support by measuring FPS (threshold ~100Hz indicates ProMotion)
     async function detectProMotion() {
       const fps = await measureFrameRate(1000);
-      return fps;
+      return +fps.toFixed(2);
     }
 
     let measuredProMotion = await detectProMotion();
