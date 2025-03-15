@@ -1,7 +1,7 @@
 (async function() {
   // Dynamically import the GPU parser module.
-  const gpuParserModule = await import('./gpuParser.js');
-  const parseDevicesModule = await import('./DeviceParser.js');
+  const gpuParserModule = await import('./src/gpuParser.js');
+  const parseDevicesModule = await import('./src/DeviceParser.js');
   const { getParsedGPUInfo } = gpuParserModule;
   const { parseDevices } = parseDevicesModule;
   
@@ -25,8 +25,8 @@
     const isMac = /macintosh|mac os/i.test(platformInfo);
     
     // Exclude devices with multiple touch points (e.g., iPads).
-    // return isMac && (navigator.maxTouchPoints === 0 || navigator.maxTouchPoints === 1);
-    return false
+    return isMac && (navigator.maxTouchPoints === 0 || navigator.maxTouchPoints === 1);
+    // return false
   }
   
   
@@ -38,8 +38,8 @@
    */
   async function fetchDeviceData(deviceType = "mobile") {
     const jsonUrl = deviceType === "mac" 
-                    ? "mac_with_screens_devices.json" 
-                    : "apple_mobile_devices.json";
+                    ? "data/mac_with_screens_devices.json" 
+                    : "data/apple_mobile_devices.json";
     const response = await fetch(jsonUrl);
     const jsonData = await response.json();
     return jsonData;
@@ -117,15 +117,20 @@
     function getAssumedPPI() {
       const ua = navigator.userAgent;
       if (ua.includes("iPad")) {
+        console.log('ipad');
         return 264;
       } else if (ua.includes("iPhone")) {
+        console.log('phone');
         return 460;
       } else if (isMac) {
         if (physicalWidth < 2700) {
+        console.log('mac');
           return 227;
         } else if (physicalWidth < 3000) {
+         console.log('3k');
           return 220;
         } else {
+          console.log('other');
           return 226;
         }
       } else {
