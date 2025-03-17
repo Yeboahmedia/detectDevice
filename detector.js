@@ -94,13 +94,39 @@
   const logicalTolerance = 0; 
 
   /**
-   * Extracts the Sec-CH-UA brands using the modern userAgentData API.
-   * If supported, returns an array of brand objects; otherwise, returns null.
-   * @returns {Array<Object>|null} - Array of brand objects or null if not supported.
+   * Extracts all available User-Agent Client Hints data using the modern userAgentData API.
+   * If supported, returns an object with both low-entropy and high-entropy fields.
+   * Otherwise, returns null.
+   *
+   * @returns {Promise<Object|null>} - The combined UA data object or null if not supported.
    */
-  function extractSecUA() {
-    if (navigator.userAgentData && navigator.userAgentData.brands) {
-      return navigator.userAgentData.brands;
+  async function extractSecUA() {
+    if (navigator.userAgentData) {
+      // Gather low-entropy values.
+      const lowEntropyData = {
+        brands: navigator.userAgentData.brands || null,
+        mobile: navigator.userAgentData.mobile || null,
+        platform: navigator.userAgentData.platform || null
+      };
+
+      // Request high-entropy values if supported.
+      if (typeof navigator.userAgentData.getHighEntropyValues === 'function') {
+        try {
+          const highEntropyData = await navigator.userAgentData.getHighEntropyValues([
+            'architecture',
+            'bitness',
+            'model',
+            'platformVersion',
+            'uaFullVersion',
+            'fullVersionList'
+          ]);
+          return { ...lowEntropyData, ...highEntropyData };
+        } catch (error) {
+          console.error('Error fetching high-entropy UA data:', error);
+          return lowEntropyData;
+        }
+      }
+      return lowEntropyData;
     }
     return null;
   }
@@ -114,16 +140,16 @@
     // Fetch device specs from the appropriate JSON file.
     const devices = await fetchDeviceData(isMac ? "mac" : "mobile");
 
-    // Get logical dimensions (points) and scale factor
+    // Get logical dimensions (points) and scale factor.
     const logicalWidth = window.screen.width;
     const logicalHeight = window.screen.height;
     const scaleFactor = window.devicePixelRatio || 1;
     
-    // Compute physical dimensions (pixels)
+    // Compute physical dimensions (pixels).
     const physicalWidth = Math.round(logicalWidth * scaleFactor);
     const physicalHeight = Math.round(logicalHeight * scaleFactor);
     
-    // Updated assumed PPI calculation for Macs
+    // Updated assumed PPI calculation for Macs.
     function getAssumedPPI() {
       const ua = navigator.userAgent;
       if (ua.includes("iPad")) {
@@ -148,7 +174,7 @@
       }
     }
 
-    // Compute screen diagonal (in inches) using physical dimensions and an assumed PPI
+    // Compute screen diagonal (in inches) using physical dimensions and an assumed PPI.
     function computeScreenDiagonal(physicalWidth, physicalHeight, assumedPPI) {
       const diagonalPixels = Math.sqrt(physicalWidth ** 2 + physicalHeight ** 2);
       return diagonalPixels / assumedPPI;
@@ -158,11 +184,11 @@
     const computedDiagonalInches = computeScreenDiagonal(physicalWidth, physicalHeight, assumedPPI);
     const computedDiagonalMM = computedDiagonalInches * 25.4;
   
-    // Parse GPU info
+    // Parse GPU info.
     const parsedGPUInfo = getParsedGPUInfo();
     const resolutionStr = `${logicalWidth} x ${logicalHeight} (Scale: ${scaleFactor})`;
 
-    // Measure frame rate for ProMotion detection
+    // Measure frame rate for ProMotion detection.
     function measureFrameRate(duration = 1000) {
       return new Promise(resolve => {
         let frameCount = 0;
@@ -195,38 +221,45 @@
       filteredDevices = filterDevicesByLogicalDimensions(devices, logicalWidth, logicalHeight, logicalTolerance);
       filteredDevices = filterDevicesByScaleFactor(filteredDevices, scaleFactor);
     } else {
-      console.log('here');
       filteredDevices = filterDevicesByLogicalDimensions(devices, logicalWidth, logicalHeight, logicalTolerance);
       filteredDevices = filterDevicesByScaleFactor(filteredDevices, scaleFactor);
-      console.log(filteredDevices);
       filteredDevices = filterDevicesByScreenDiagonal(devices, computedDiagonalInches, diagonalTolerance);
     }
     
-    // Extract device names and parse them
+    // Extract device names and parse them.
     let deviceNames = filteredDevices.map(device => device.device);
     deviceNames = parseDevices(deviceNames);
   
-    // Extract Sec-CH-UA info.
-    const secUAData = extractSecUA();
-    // If available, format the brands as "brand version"; otherwise, set to "N/A".
-    const secUAInfo = secUAData 
-                      ? secUAData.map(item => `${item.brand} ${item.version}`).join(', ')
-                      : "N/A";
+    // Extract all available UA data.
+    const uaData = await extractSecUA();
+    // Format the UA data for display.
+    let uaInfoDisplay = "N/A";
+    if (uaData) {
+      uaInfoDisplay = Object.entries(uaData)
+        .map(([key, value]) => {
+          // For objects or arrays, stringify the content.
+          if (typeof value === 'object' && value !== null) {
+            return `${key}: ${JSON.stringify(value)}`;
+          }
+          return `${key}: ${value}`;
+        })
+        .join(', ');
+    }
   
-    // Update UI
-    function updateUI(deviceName, resolution, diagonalInches, diagonalMM, gpuInfo, secUAInfo) {
+    // Update UI.
+    function updateUI(deviceName, resolution, diagonalInches, diagonalMM, gpuInfo, uaInfo) {
       document.getElementById("device-name").innerText = deviceName;
       document.getElementById("screen-size").innerText = resolution;
       document.getElementById("screen-diagonal").innerText = diagonalInches.toFixed(2) + " inches";
       document.getElementById("screen-diagonal-mm").innerText = diagonalMM.toFixed(2) + " mm";
       document.getElementById("gpu-info").innerText = gpuInfo.gpu;
       document.getElementById("promotion").innerText = promotionStr;
-      document.getElementById("sec-ua-info").innerText = secUAInfo;
+      document.getElementById("sec-ua-info").innerText = uaInfo;
     }
   
-    updateUI(deviceNames, resolutionStr, computedDiagonalInches, computedDiagonalMM, parsedGPUInfo, secUAInfo);
+    updateUI(deviceNames, resolutionStr, computedDiagonalInches, computedDiagonalMM, parsedGPUInfo, uaInfoDisplay);
   }
   
-  // Start detection
+  // Start detection.
   detectAppleDevice();
 })();
