@@ -269,6 +269,9 @@
     if (isMac) {
       filteredDevices = filterDevicesByLogicalDimensions(devices, logicalWidth, logicalHeight, logicalTolerance);
       filteredDevices = filterDevicesByScaleFactor(filteredDevices, scaleFactor);
+      const colorGamutInfo = checkColorGamut();
+      filteredDevices = filterDevicesByColorGamut(filteredDevices, colorGamutInfo);
+
     } else {
       // First, filter by logical dimensions.
       const logicalFiltered = filterDevicesByLogicalDimensions(devices, logicalWidth, logicalHeight, logicalTolerance);
