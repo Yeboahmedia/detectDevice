@@ -25,7 +25,8 @@
     const isMac = /macintosh|mac os/i.test(platformInfo);
     
     // Exclude devices with multiple touch points (e.g., iPads).
-    return isMac && (navigator.maxTouchPoints === 0 || navigator.maxTouchPoints === 1);
+    // return isMac && (navigator.maxTouchPoints === 0 || navigator.maxTouchPoints === 1);
+    return false;
   }
   
   /**
@@ -89,8 +90,8 @@
     });
   }
   
-  // Tolerance values
-  const diagonalTolerance = 0.005; 
+  // Tolerance values.
+  const diagonalTolerance = 0.04; 
   const logicalTolerance = 0; 
 
   /**
@@ -132,7 +133,24 @@
   }
   
   // -------------------------
-  // Main detection logic
+  // New function to check color gamut.
+  // -------------------------
+  /**
+   * Checks the display's color gamut using CSS media queries.
+   * @returns {string} - The detected color gamut.
+   */
+  function checkColorGamut() {
+    if (window.matchMedia("(color-gamut: p3)").matches) {
+      return "Wide Color (P3)";
+    } else if (window.matchMedia("(color-gamut: srgb)").matches) {
+      return "sRGB";
+    } else {
+      return "Unknown";
+    }
+  }
+  
+  // -------------------------
+  // Main detection logic.
   // -------------------------
   async function detectAppleDevice() {
     // Determine if the device is a Mac using the revised function.
@@ -149,24 +167,37 @@
     const physicalWidth = Math.round(logicalWidth * scaleFactor);
     const physicalHeight = Math.round(logicalHeight * scaleFactor);
     
-    // Updated assumed PPI calculation for Macs.
+    /**
+     * Updated assumed PPI calculation.
+     *
+     * - For iPad: returns 264.
+     * - For iPhone: uses devicePixelRatio to differentiate:
+     *     - DPR of 3: returns 460 (e.g., iPhone X/XS).
+     *     - DPR of 2: returns 326 (e.g., iPhone XR, 11, 8, SE).
+     * - For Macs: uses existing heuristics.
+     * - Otherwise: defaults to 96.
+     */
     function getAssumedPPI() {
       const ua = navigator.userAgent;
       if (ua.includes("iPad")) {
-        console.log('ipad');
+        console.log('iPad');
         return 264;
       } else if (ua.includes("iPhone")) {
-        console.log('phone');
-        return 460;
+        console.log('iPhone');
+        if (window.devicePixelRatio === 3) {
+          return 460;
+        } else {
+          return 326;
+        }
       } else if (isMac) {
         if (physicalWidth < 2700) {
           console.log('mac');
           return 227;
         } else if (physicalWidth < 3000) {
-          console.log('3k');
+          console.log('3k mac');
           return 220;
         } else {
-          console.log('other');
+          console.log('other mac');
           return 226;
         }
       } else {
@@ -214,18 +245,30 @@
   
     let measuredProMotion = await detectProMotion();
     const promotionStr = measuredProMotion;
-  
-    // Device filtering: For Macs, filter by logical dimensions first, then scale factor.
+
+    // Filter sequentially: logical dimensions -> scale factor -> screen diagonal.
     let filteredDevices = [];
     if (isMac) {
       filteredDevices = filterDevicesByLogicalDimensions(devices, logicalWidth, logicalHeight, logicalTolerance);
       filteredDevices = filterDevicesByScaleFactor(filteredDevices, scaleFactor);
     } else {
-      filteredDevices = filterDevicesByLogicalDimensions(devices, logicalWidth, logicalHeight, logicalTolerance);
-      filteredDevices = filterDevicesByScaleFactor(filteredDevices, scaleFactor);
-      filteredDevices = filterDevicesByScreenDiagonal(devices, computedDiagonalInches, diagonalTolerance);
+      // First, filter by logical dimensions.
+      const logicalFiltered = filterDevicesByLogicalDimensions(devices, logicalWidth, logicalHeight, logicalTolerance);
+      console.log(logicalFiltered);
+
+      // Next, filter the result by scale factor.
+      const scaleFiltered = filterDevicesByScaleFactor(logicalFiltered, scaleFactor);
+      console.log(scaleFiltered);
+
+      // Now, filter by screen diagonal.
+      const screenFiltered = filterDevicesByScreenDiagonal(scaleFiltered, computedDiagonalInches, diagonalTolerance);
+      console.log(screenFiltered);
+      
+      // If the screen diagonal filtering returns an empty array but scaleFiltered is non-empty,
+      // use the scaleFiltered results.
+      filteredDevices = (screenFiltered.length > 0) ? screenFiltered : scaleFiltered;
     }
-    
+
     // Extract device names and parse them.
     let deviceNames = filteredDevices.map(device => device.device);
     deviceNames = parseDevices(deviceNames);
@@ -246,8 +289,11 @@
         .join(', ');
     }
   
+    // Check the display's color gamut.
+    const colorGamutInfo = checkColorGamut();
+  
     // Update UI.
-    function updateUI(deviceName, resolution, diagonalInches, diagonalMM, gpuInfo, uaInfo) {
+    function updateUI(deviceName, resolution, diagonalInches, diagonalMM, gpuInfo, uaInfo, colorGamut) {
       document.getElementById("device-name").innerText = deviceName;
       document.getElementById("screen-size").innerText = resolution;
       document.getElementById("screen-diagonal").innerText = diagonalInches.toFixed(2) + " inches";
@@ -255,9 +301,11 @@
       document.getElementById("gpu-info").innerText = gpuInfo.gpu;
       document.getElementById("promotion").innerText = promotionStr;
       document.getElementById("sec-ua-info").innerText = uaInfo;
+      // New element update for color gamut.
+      document.getElementById("color-gamut").innerText = colorGamut;
     }
   
-    updateUI(deviceNames, resolutionStr, computedDiagonalInches, computedDiagonalMM, parsedGPUInfo, uaInfoDisplay);
+    updateUI(deviceNames, resolutionStr, computedDiagonalInches, computedDiagonalMM, parsedGPUInfo, uaInfoDisplay, colorGamutInfo);
   }
   
   // Start detection.
