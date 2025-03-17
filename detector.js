@@ -26,9 +26,7 @@
     
     // Exclude devices with multiple touch points (e.g., iPads).
     return isMac && (navigator.maxTouchPoints === 0 || navigator.maxTouchPoints === 1);
-    // return false
   }
-  
   
   /**
    * Fetch and parse the JSON file containing device specs.
@@ -95,6 +93,18 @@
   const diagonalTolerance = 0.005; 
   const logicalTolerance = 0; 
 
+  /**
+   * Extracts the Sec-CH-UA brands using the modern userAgentData API.
+   * If supported, returns an array of brand objects; otherwise, returns null.
+   * @returns {Array<Object>|null} - Array of brand objects or null if not supported.
+   */
+  function extractSecUA() {
+    if (navigator.userAgentData && navigator.userAgentData.brands) {
+      return navigator.userAgentData.brands;
+    }
+    return null;
+  }
+  
   // -------------------------
   // Main detection logic
   // -------------------------
@@ -124,10 +134,10 @@
         return 460;
       } else if (isMac) {
         if (physicalWidth < 2700) {
-        console.log('mac');
+          console.log('mac');
           return 227;
         } else if (physicalWidth < 3000) {
-         console.log('3k');
+          console.log('3k');
           return 220;
         } else {
           console.log('other');
@@ -190,24 +200,31 @@
       filteredDevices = filterDevicesByScaleFactor(filteredDevices, scaleFactor);
       console.log(filteredDevices);
       filteredDevices = filterDevicesByScreenDiagonal(devices, computedDiagonalInches, diagonalTolerance);
-
     }
     
     // Extract device names and parse them
     let deviceNames = filteredDevices.map(device => device.device);
     deviceNames = parseDevices(deviceNames);
   
+    // Extract Sec-CH-UA info.
+    const secUAData = extractSecUA();
+    // If available, format the brands as "brand version"; otherwise, set to "N/A".
+    const secUAInfo = secUAData 
+                      ? secUAData.map(item => `${item.brand} ${item.version}`).join(', ')
+                      : "N/A";
+  
     // Update UI
-    function updateUI(deviceName, resolution, diagonalInches, diagonalMM, gpuInfo) {
+    function updateUI(deviceName, resolution, diagonalInches, diagonalMM, gpuInfo, secUAInfo) {
       document.getElementById("device-name").innerText = deviceName;
       document.getElementById("screen-size").innerText = resolution;
       document.getElementById("screen-diagonal").innerText = diagonalInches.toFixed(2) + " inches";
       document.getElementById("screen-diagonal-mm").innerText = diagonalMM.toFixed(2) + " mm";
       document.getElementById("gpu-info").innerText = gpuInfo.gpu;
       document.getElementById("promotion").innerText = promotionStr;
+      document.getElementById("sec-ua-info").innerText = secUAInfo;
     }
   
-    updateUI(deviceNames, resolutionStr, computedDiagonalInches, computedDiagonalMM, parsedGPUInfo);
+    updateUI(deviceNames, resolutionStr, computedDiagonalInches, computedDiagonalMM, parsedGPUInfo, secUAInfo);
   }
   
   // Start detection
