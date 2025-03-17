@@ -109,7 +109,7 @@
   }
   
   // Tolerance values.
-  const diagonalTolerance = 0.03; 
+  const diagonalTolerance = 0.02; 
   const logicalTolerance = 0; 
 
   /**
