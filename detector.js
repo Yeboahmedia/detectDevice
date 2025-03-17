@@ -90,6 +90,24 @@
     });
   }
   
+  /**
+   * Filters devices by the color gamut.
+   * If a device has a "color_gamut" property, it must match the target gamut (case-insensitive).
+   * Devices without this property are included.
+   * @param {Array<Object>} devices - Array of device objects.
+   * @param {string} targetGamut - Target color gamut (e.g., "P3" or "sRGB").
+   * @returns {Array<Object>} - Array of matching devices.
+   */
+  function filterDevicesByColorGamut(devices, targetGamut) {
+    return devices.filter(device => {
+      if (device.hasOwnProperty("color_gamut") && device.color_gamut) {
+        return device.color_gamut.toLowerCase() === targetGamut.toLowerCase();
+      }
+      // If no color_gamut key, include the device.
+      return true;
+    });
+  }
+  
   // Tolerance values.
   const diagonalTolerance = 0.04; 
   const logicalTolerance = 0; 
@@ -141,7 +159,7 @@
    */
   function checkColorGamut() {
     if (window.matchMedia("(color-gamut: p3)").matches) {
-      return "Wide Color (P3)";
+      return "P3";
     } else if (window.matchMedia("(color-gamut: srgb)").matches) {
       return "sRGB";
     } else {
@@ -246,7 +264,7 @@
     let measuredProMotion = await detectProMotion();
     const promotionStr = measuredProMotion;
 
-    // Filter sequentially: logical dimensions -> scale factor -> screen diagonal.
+    // Filter sequentially: logical dimensions -> scale factor -> screen diagonal -> color gamut.
     let filteredDevices = [];
     if (isMac) {
       filteredDevices = filterDevicesByLogicalDimensions(devices, logicalWidth, logicalHeight, logicalTolerance);
@@ -254,19 +272,23 @@
     } else {
       // First, filter by logical dimensions.
       const logicalFiltered = filterDevicesByLogicalDimensions(devices, logicalWidth, logicalHeight, logicalTolerance);
-      console.log(logicalFiltered);
+      console.log("Logical Filter:", logicalFiltered);
 
-      // Next, filter the result by scale factor.
+      // Next, filter by scale factor.
       const scaleFiltered = filterDevicesByScaleFactor(logicalFiltered, scaleFactor);
-      console.log(scaleFiltered);
+      console.log("Scale Filter:", scaleFiltered);
 
-      // Now, filter by screen diagonal.
+      // Then, filter by screen diagonal.
       const screenFiltered = filterDevicesByScreenDiagonal(scaleFiltered, computedDiagonalInches, diagonalTolerance);
-      console.log(screenFiltered);
+      console.log("Screen Diagonal Filter:", screenFiltered);
       
-      // If the screen diagonal filtering returns an empty array but scaleFiltered is non-empty,
-      // use the scaleFiltered results.
+      // Fallback: if screen diagonal filtering returns an empty array but scaleFiltered is non-empty, use scaleFiltered.
       filteredDevices = (screenFiltered.length > 0) ? screenFiltered : scaleFiltered;
+      
+      // Finally, filter by color gamut.
+      const colorGamutInfo = checkColorGamut();
+      filteredDevices = filterDevicesByColorGamut(filteredDevices, colorGamutInfo);
+      console.log("Color Gamut Filter:", filteredDevices, colorGamutInfo);
     }
 
     // Extract device names and parse them.
@@ -290,7 +312,7 @@
     }
   
     // Check the display's color gamut.
-    const colorGamutInfo = checkColorGamut();
+    const colorGamutDisplay = checkColorGamut();
   
     // Update UI.
     function updateUI(deviceName, resolution, diagonalInches, diagonalMM, gpuInfo, uaInfo, colorGamut) {
@@ -305,7 +327,7 @@
       document.getElementById("color-gamut").innerText = colorGamut;
     }
   
-    updateUI(deviceNames, resolutionStr, computedDiagonalInches, computedDiagonalMM, parsedGPUInfo, uaInfoDisplay, colorGamutInfo);
+    updateUI(deviceNames, resolutionStr, computedDiagonalInches, computedDiagonalMM, parsedGPUInfo, uaInfoDisplay, colorGamutDisplay);
   }
   
   // Start detection.

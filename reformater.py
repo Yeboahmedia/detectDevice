@@ -1,54 +1,37 @@
 import json
+from datetime import datetime
 
-def format_device_data(device):
+def add_color_gamut(device):
     """
-    Transforms a device object from the provided format to the target format.
+    Add the color_gamut key based on the device's release date.
+    Devices with a release year before 2016 get 'sRGB',
+    and those from 2016 onward get 'P3'.
+    """
+    # Parse the release date assuming the format 'YYYY-MM-DD'
+    release_date = datetime.strptime(device.get('release_date'), '%Y-%m-%d')
     
-    Args:
-      device (dict): The device object with original keys.
-      
-    Returns:
-      dict: The device object with reformatted keys.
-    """
-    formatted = {
-        "aspect_ratio": device.get("Aspect Ratio"),
-        "gpu": device.get("GPU"),
-        "logical_height": device.get("Logical Height"),
-        "logical_width": device.get("Logical Width"),
-        "physical_height": device.get("Physical Height"),
-        "physical_width": device.get("Physical Width"),
-        "ppi": device.get("PPI"),
-        "pro-motion": device.get("ProMotion support"),
-        "release_date": device.get("Release Date"),
-        "scale_factor": device.get("Scale Factor"),
-        "screen_diagonal": device.get("Screen Diagonal"),
-        "unique": False,  # Always set unique to False as specified
-        "device": device.get("Device Name")
-    }
-    return formatted
+    # Check the year and update the device dictionary
+    if release_date.year < 2016:
+        device['color_gamut'] = "sRGB"
+    else:
+        device['color_gamut'] = "P3"
+    return device
 
 def main():
-    # File paths for input and output JSON files.
-    input_file = "mac_with_screens_devices.json"    # Change this if your source file is named differently
-    output_file = "mac_with_screens_devices_2.json"   # Change this if you want a different output file name
-
-    # Read the source JSON data from the input file.
-    with open(input_file, "r", encoding="utf-8") as infile:
-        data = json.load(infile)
+    # File paths (change these as needed)
+    input_file = 'data/mac_with_screens_devices.json'
+    output_file = 'updated_devices.json'
     
-    # Process the data:
-    # - If the JSON file contains a list of devices, format each one.
-    # - Otherwise, format the single device object.
-    if isinstance(data, list):
-        formatted_data = [format_device_data(device) for device in data]
-    else:
-        formatted_data = format_device_data(data)
-
-    # Write the reformatted data to the output file.
-    with open(output_file, "w", encoding="utf-8") as outfile:
-        json.dump(formatted_data, outfile, indent=2)
+    # Read the JSON file
+    with open(input_file, 'r') as f:
+        devices = json.load(f)
     
-    print(f"Formatted JSON has been written to {output_file}")
+    # Process each device object to add the color_gamut key
+    updated_devices = [add_color_gamut(device) for device in devices]
+    
+    # Write the updated list back to a new JSON file with pretty printing
+    with open(output_file, 'w') as f:
+        json.dump(updated_devices, f, indent=2)
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()
