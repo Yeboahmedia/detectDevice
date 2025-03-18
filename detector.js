@@ -13,21 +13,23 @@
   function isMacDevice() {
     let platformInfo = "";
     
-    // Use the modern userAgentData API if available.
+    // Prefer userAgentData if available, otherwise use navigator.platform or navigator.userAgent.
     if (navigator.userAgentData && navigator.userAgentData.platform) {
       platformInfo = navigator.userAgentData.platform;
+    } else if (navigator.platform) {
+      platformInfo = navigator.platform;
     } else {
-      // Fallback: use navigator.userAgent as a backup.
       platformInfo = navigator.userAgent;
     }
     
-    // Check if the platform info indicates a macOS device.
-    const isMac = /macintosh|mac os/i.test(platformInfo);
+    // Check if platformInfo contains "mac" (covers MacIntel, macOS, etc.)
+    const isMac = platformInfo.toLowerCase().includes("mac");
     
-    // Exclude devices with multiple touch points (e.g., iPads).
+    // Exclude devices with multiple touch points (e.g., iPads)
     return isMac && (navigator.maxTouchPoints === 0 || navigator.maxTouchPoints === 1);
-    // return false;
   }
+  
+  
   
   /**
    * Fetch and parse the JSON file containing device specs.
@@ -322,7 +324,7 @@
       document.getElementById("device-name").innerText = deviceName;
       document.getElementById("screen-size").innerText = resolution;
       document.getElementById("screen-diagonal").innerText = diagonalInches.toFixed(2) + " inches";
-      document.getElementById("screen-diagonal-mm").innerText = diagonalMM.toFixed(2) + " mm";
+      document.getElementById("screen-diagonal-mm").innerText = isMac
       document.getElementById("gpu-info").innerText = gpuInfo.gpu;
       document.getElementById("promotion").innerText = promotionStr;
       document.getElementById("sec-ua-info").innerText = uaInfo;
