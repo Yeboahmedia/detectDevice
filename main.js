@@ -23,8 +23,9 @@ import { dynamicFilterDevices } from "./src/filter.js";
 
     // Initialize WebGPU.
     const webGPUResult = await initializeWebGPU();
-    let wGPU = webGPUResult.adapterType.info['device']
-    console.log(webGPUResult.adapterType);
+    const mergedInfo = `Vendor: ${webGPUResult.adapterType.info['vendor']}, Architecture: ${webGPUResult.adapterType.info['architecture']}, Device: ${webGPUResult.adapterType.info['device']}, Description: ${webGPUResult.adapterType.info['description']}`;
+    console.log(mergedInfo);
+
     
     // Check the display's color gamut.
     const colorGamutInfo = checkColorGamut();
@@ -68,20 +69,21 @@ import { dynamicFilterDevices } from "./src/filter.js";
     const resolutionStr = `${logicalWidth} x ${logicalHeight} (Scale: ${scaleFactor})`;
 
     // Update the UI with the detected information.
-    function updateUI(deviceName, resolution, diagonalInches, isMac, gpuInfo, uaInfo, colorGamut) {
+    function updateUI(deviceName, resolution, diagonalInches, isMac, gpuInfo, refreshRate, uaInfo, colorGamut, wGPU) {
       document.getElementById("device-name").innerText = deviceName;
       document.getElementById("screen-size").innerText = resolution;
       document.getElementById("screen-diagonal").innerText = diagonalInches.toFixed(2) + " inches";
-      document.getElementById("is-this-mac").innerText = isMac
+      document.getElementById("is-this-mac").innerText = isMac;
       document.getElementById("gpu-info").innerText = gpuInfo.gpu;
-      document.getElementById("promotion").innerText = promotionStr;
+      document.getElementById("wGPU").innerText = wGPU;
+      document.getElementById("promotion").innerText = refreshRate;
       document.getElementById("sec-ua-info").innerText = uaInfo;
       document.getElementById("color-gamut").innerText = colorGamut;
     }
 
     updateUI(
       deviceNames,resolutionStr, computedDiagonalInches,
-      wGPU, parsedGPUInfo, uaInfoDisplay,colorGamutInfo
+      isMac, parsedGPUInfo, promotionStr, uaInfoDisplay,colorGamutInfo, mergedInfo
     );
   }
 
