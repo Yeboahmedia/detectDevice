@@ -23,12 +23,9 @@ import { dynamicFilterDevices } from "./src/filter.js";
 
     // Initialize WebGPU.
     const webGPUResult = await initializeWebGPU();
-    let wGPU = webGPUResult.adapterType.info['architecture']
+    let wGPU = webGPUResult.adapterType.info['device']
     console.log(webGPUResult.adapterType);
     
-    
-
-
     // Check the display's color gamut.
     const colorGamutInfo = checkColorGamut();
 
