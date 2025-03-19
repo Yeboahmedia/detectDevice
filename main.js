@@ -23,7 +23,7 @@ import { dynamicFilterDevices } from "./src/filter.js";
 
     // Initialize WebGPU.
     const webGPUResult = await initializeWebGPU();
-    let wGPU = webGPUResult.adapterType.info['vendor']
+    let wGPU = webGPUResult.adapterType.info['architecture']
     console.log(webGPUResult.adapterType);
     
     
