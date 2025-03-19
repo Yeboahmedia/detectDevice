@@ -270,7 +270,11 @@
     let filteredDevices = [];
     if (isMac) {
       filteredDevices = filterDevicesByLogicalDimensions(devices, logicalWidth, logicalHeight, logicalTolerance);
+      console.log(filteredDevices);
+      
       filteredDevices = filterDevicesByScaleFactor(filteredDevices, scaleFactor);
+      console.log(filteredDevices);
+
       const colorGamutInfo = checkColorGamut();
       filteredDevices = filterDevicesByColorGamut(filteredDevices, colorGamutInfo);
 
