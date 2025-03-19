@@ -1,6 +1,6 @@
 import { 
   isMacDevice, fetchDeviceData, extractSecUA, checkColorGamut, 
-  detectProMotion, getScreenInfo, getParsedGPUInfo 
+  detectProMotion, getScreenInfo, getParsedGPUInfo, initializeWebGPU
 } from "./src/computeDeviceInfo.js";
 import { parseDevices } from "./src/DeviceParser.js";
 import { dynamicFilterDevices } from "./src/filter.js";
@@ -21,12 +21,16 @@ import { dynamicFilterDevices } from "./src/filter.js";
     // Measure frame rate for ProMotion detection.
     const measuredProMotion = await detectProMotion();
 
-
+    // Initialize WebGPU.
+    const webGPUResult = await initializeWebGPU();
+    let wGPU = webGPUResult.adapterType.info['vendor']
+    console.log(webGPUResult.adapterType);
+    
+    
 
 
     // Check the display's color gamut.
     const colorGamutInfo = checkColorGamut();
-
 
    
     // Filter devices based on various criteria.
@@ -80,7 +84,7 @@ import { dynamicFilterDevices } from "./src/filter.js";
 
     updateUI(
       deviceNames,resolutionStr, computedDiagonalInches,
-      isMac, parsedGPUInfo, uaInfoDisplay,colorGamutInfo
+      wGPU, parsedGPUInfo, uaInfoDisplay,colorGamutInfo
     );
   }
 

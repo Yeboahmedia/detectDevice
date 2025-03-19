@@ -292,3 +292,44 @@ function parseRendererInfo(rendererString) {
     return { WEBGL_MASKED, ...parsedInfo };
   }
   
+
+/**
+ * Initializes WebGPU by requesting an adapter and a device.
+ * @returns {Promise<Object>} - An object indicating success or failure, and details.
+ */
+export async function initializeWebGPU() {
+    let gpuDevice = null;
+  
+    if (!("gpu" in navigator)) {
+      return { success: false, error: "User agent doesn’t support WebGPU." };
+    }
+  
+    try {
+      const gpuAdapter = await navigator.gpu.requestAdapter();
+  
+      if (!gpuAdapter) {
+        return { success: false, error: "No WebGPU adapters found." };
+      }
+  
+      gpuDevice = await gpuAdapter.requestDevice();
+  
+      gpuDevice.lost.then((info) => {
+        console.error(`WebGPU device was lost: ${info.message}`);
+        gpuDevice = null;
+  
+        if (info.reason !== "destroyed") {
+          initializeWebGPU(); // Attempt to reinitialize
+        }
+      });
+  
+      return {
+        success: true,
+        adapterType: gpuAdapter,
+        adapterName: gpuAdapter.name || "Unknown",
+        features: Array.from(gpuAdapter.features),
+        limits: gpuAdapter.limits
+      };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  }
