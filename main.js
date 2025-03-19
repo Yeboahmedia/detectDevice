@@ -23,8 +23,14 @@ import { dynamicFilterDevices } from "./src/filter.js";
 
     // Initialize WebGPU.
     const webGPUResult = await initializeWebGPU();
-    const mergedInfo = `Vendor: ${webGPUResult.adapterType.info['vendor']}, Architecture: ${webGPUResult.adapterType.info['architecture']}, Device: ${webGPUResult.adapterType.info['device']}, Description: ${webGPUResult.adapterType.info['description']}`;
-    console.log(mergedInfo);
+    let mergedInfo = 'n/a'
+    if (webGPUResult.success && webGPUResult.adapterType) {
+      const { vendor, architecture, device, description } = webGPUResult.adapterType.info;
+      mergedInfo = `Vendor: ${vendor}, Architecture: ${architecture}, Device: ${device}, Description: ${description}`;
+      console.log(mergedInfo);
+    } else {
+      console.error("Failed to initialize WebGPU or adapter info is missing.");
+    }
 
     
     // Check the display's color gamut.

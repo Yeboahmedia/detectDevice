@@ -316,20 +316,28 @@ export async function initializeWebGPU() {
       gpuDevice.lost.then((info) => {
         console.error(`WebGPU device was lost: ${info.message}`);
         gpuDevice = null;
-  
         if (info.reason !== "destroyed") {
           initializeWebGPU(); // Attempt to reinitialize
         }
       });
   
+      // Assuming the adapter has an 'info' property (this may depend on your implementation)
       return {
         success: true,
-        adapterType: gpuAdapter,
         adapterName: gpuAdapter.name || "Unknown",
         features: Array.from(gpuAdapter.features),
-        limits: gpuAdapter.limits
+        limits: gpuAdapter.limits,
+        adapterType: {
+          info: {
+            vendor: gpuAdapter.info?.vendor || "N/A",
+            architecture: gpuAdapter.info?.architecture || "N/A",
+            device: gpuAdapter.info?.device || "N/A",
+            description: gpuAdapter.info?.description || "N/A"
+          }
+        }
       };
     } catch (error) {
       return { success: false, error: error.message };
     }
   }
+  
