@@ -27,7 +27,7 @@ import { dynamicFilterDevices } from "./src/filter.js";
     if (webGPUResult.success && webGPUResult.adapterType) {
       const { vendor, architecture, device, description } = webGPUResult.adapterType.info;
       mergedInfo = `Vendor: ${vendor}, Architecture: ${architecture}, Device: ${device}, Description: ${description}`;
-      console.log(mergedInfo);
+      console.log(webGPUResult);
     } else {
       console.error("Failed to initialize WebGPU or adapter info is missing.");
     }
