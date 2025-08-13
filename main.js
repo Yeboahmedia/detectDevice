@@ -1,6 +1,6 @@
 import { 
   isMacDevice, fetchDeviceData, extractSecUA, checkColorGamut, 
-  detectProMotion, getScreenInfo, getParsedGPUInfo, initializeWebGPU
+  detectProMotion, getScreenInfo, getParsedGPUInfo, initializeWebGPU, getCameraCount
 } from "./src/computeDeviceInfo.js";
 import { parseDevices } from "./src/DeviceParser.js";
 import { dynamicFilterDevices } from "./src/filter.js";
@@ -53,6 +53,9 @@ import { dynamicFilterDevices } from "./src/filter.js";
 
     
 
+    //get camera count
+    const cameraCount = await getCameraCount();
+
     // Extract device names and parse them.
     let deviceNames = filteredDevices.map((device) => device.device);
     deviceNames = parseDevices(deviceNames);
@@ -80,6 +83,7 @@ import { dynamicFilterDevices } from "./src/filter.js";
       document.getElementById("screen-size").innerText = resolution;
       document.getElementById("screen-diagonal").innerText = diagonalInches.toFixed(2) + " inches";
       document.getElementById("is-this-mac").innerText = isMac;
+      document.getElementById("camera-count").innerText = cameraCount;
       document.getElementById("gpu-info").innerText = gpuInfo.gpu;
       document.getElementById("wGPU").innerText = wGPU;
       document.getElementById("promotion").innerText = refreshRate;

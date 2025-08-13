@@ -341,3 +341,26 @@ export async function initializeWebGPU() {
     }
   }
   
+
+  /**
+ * Asynchronously enumerates available video input devices (cameras) and logs their details.
+ * @returns {Promise<number>} A promise that resolves with the number of video devices found.
+ */
+export async function getCameraCount() {
+  try {
+    const devices = await navigator.mediaDevices.enumerateDevices();
+    const videoDevices = devices.filter(device => device.kind === 'videoinput');
+    
+    console.log(`Found ${videoDevices.length} video input devices.`);
+    
+    videoDevices.forEach((device, index) => {
+      console.log(`Camera ${index + 1}: ${device.label || 'Unnamed Camera'}`);
+    });
+    
+    return videoDevices.length;
+    
+  } catch (err) {
+    console.error('Error enumerating devices:', err);
+    throw err; // Re-throw the error for the caller to handle
+  }
+}
