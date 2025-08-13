@@ -347,7 +347,11 @@ export async function initializeWebGPU() {
  * @returns {Promise<number>} A promise that resolves with the number of video devices found.
  */
 export async function getCameraCount() {
-  try {
+   try {
+    // 1. Request camera permission
+    const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+    
+    // 2. Enumerate devices after permission is granted
     const devices = await navigator.mediaDevices.enumerateDevices();
     const videoDevices = devices.filter(device => device.kind === 'videoinput');
     
@@ -357,10 +361,13 @@ export async function getCameraCount() {
       console.log(`Camera ${index + 1}: ${device.label || 'Unnamed Camera'}`);
     });
     
+    // Stop the stream to turn off the camera
+    stream.getTracks().forEach(track => track.stop());
+    
     return videoDevices.length;
     
   } catch (err) {
-    console.error('Error enumerating devices:', err);
-    throw err; // Re-throw the error for the caller to handle
+    console.error('Error getting camera count:', err);
+    throw err;
   }
 }
